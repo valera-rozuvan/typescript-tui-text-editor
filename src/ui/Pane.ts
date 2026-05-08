@@ -46,6 +46,29 @@ export class Pane {
     }
   }
 
+  // Center the cursor line in the viewport. If the file fits entirely in the
+  // pane, no vertical scrolling is applied (file is shown from the top).
+  centerOnCursor(): void {
+    const ch = this.contentHeight();
+    const cw = this.contentWidth();
+    const lineCount = this.buffer?.lineCount ?? 0;
+
+    if (lineCount <= ch) {
+      this.scrollLine = 0;
+    } else {
+      this.scrollLine = Math.max(0, this.cursor.line - Math.floor(ch / 2));
+      const maxScroll = lineCount - ch;
+      if (this.scrollLine > maxScroll) this.scrollLine = maxScroll;
+    }
+
+    if (this.cursor.col < this.scrollCol) {
+      this.scrollCol = this.cursor.col;
+    }
+    if (this.cursor.col >= this.scrollCol + cw) {
+      this.scrollCol = this.cursor.col - cw + 1;
+    }
+  }
+
   // Cursor position within content area (0-indexed, relative to pane)
   cursorPaneX(): number {
     return this.gutterWidth() + this.cursor.col - this.scrollCol;

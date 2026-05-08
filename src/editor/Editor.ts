@@ -510,7 +510,7 @@ export class Editor {
       const fileResult = result as FileSearchResult;
       const pane = this.layout.panes.find(p => p.buffer === fileResult.buffer) ?? this.layout.activePane;
       pane.cursor.setPos(fileResult.line, fileResult.col);
-      pane.scrollToCursor();
+      pane.centerOnCursor();
     } else {
       // Project search result — need to open file
       const projResult = result as ProjectSearchResult;
@@ -522,7 +522,7 @@ export class Editor {
         targetPane.buffer = buf;
         targetPane.cursor.setPos(projResult.line, projResult.col);
         targetPane.scrollLine = 0;
-        targetPane.scrollToCursor();
+        targetPane.centerOnCursor();
         this.render();
       }).catch(() => {});
     }
