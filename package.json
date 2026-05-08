@@ -1,0 +1,15 @@
+{
+  "name": "node-text-editor",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "tsc -p unit-tests/tsconfig.json && node unit-tests/runner.mjs",
+    "test:parallel": "tsc -p unit-tests/tsconfig.json && node unit-tests/runner.mjs --parallel"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
