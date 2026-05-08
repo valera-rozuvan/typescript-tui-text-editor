@@ -1,4 +1,6 @@
 import { Terminal } from './Terminal.js';
+import { ScreenBuffer, DrawContext, cellsEqual } from './ScreenBuffer.js';
+import type { RGB } from './ScreenBuffer.js';
 import type { Layout } from '../ui/Layout.js';
 import type { Pane } from '../ui/Pane.js';
 import type { FileBrowser } from '../ui/FileBrowser.js';
@@ -10,13 +12,22 @@ import { THEME, tokenColor } from '../highlight/tokens.js';
 import type { LineTokens } from '../highlight/tokens.js';
 import { basename } from 'path';
 
-const T = Terminal;
-
 export class Renderer {
   private term: Terminal;
 
+  // Two virtual screens: current = what the terminal shows, next = what we want.
+  private _current: ScreenBuffer;
+  private _next: ScreenBuffer;
+  // DrawContext writes into _next each frame.
+  private _ctx: DrawContext;
+  // On first render and after resize, emit clearScreen and force full repaint.
+  private _needsClear = true;
+
   constructor(term: Terminal) {
     this.term = term;
+    this._current = new ScreenBuffer(0, 0);
+    this._next    = new ScreenBuffer(0, 0);
+    this._ctx     = new DrawContext(this._next);
   }
 
   render(
@@ -29,120 +40,205 @@ export class Renderer {
   ): void {
     const W = this.term.width;
     const H = this.term.height;
-    let out = '';
 
-    out += T.hideCursor;
-    out += T.clearScreen;
+    // Resize buffers when the terminal dimensions change.
+    if (W !== this._next.cols || H !== this._next.rows) {
+      this._current.resize(H, W);
+      this._next.resize(H, W);
+      this._ctx = new DrawContext(this._next);
+      this._needsClear = true;
+    }
 
-    // Render panes
+    // Reset _next to blank (THEME.bg background, THEME.fg text, space char).
+    this._clearNext(W, H);
+    this._ctx = new DrawContext(this._next);
+
+    // Render all components into _next.
     for (let i = 0; i < layout.panes.length; i++) {
       const isActive = i === layout.activePaneIndex && !layout.browserFocused && !searchPanel.active;
-      out += this._renderPane(layout.panes[i], isActive, highlighter);
+      this._renderPane(layout.panes[i], isActive, highlighter);
     }
-
-    // Render pane separators
-    out += this._renderSeparators(layout);
-
-    // Render file browser
+    this._renderSeparators(layout);
     if (layout.browserVisible) {
-      out += this._renderFileBrowser(fileBrowser, layout, mode === 'filebrowser');
+      this._renderFileBrowser(fileBrowser, layout, mode === 'filebrowser');
     }
-
-    // Render search panel overlay
     if (searchPanel.active) {
-      out += this._renderSearchPanel(searchPanel, W, H);
+      this._renderSearchPanel(searchPanel, W, H);
     }
+    renderStatusBar(this._ctx, layout, mode, highlighter, message, W, H);
 
-    // Status bar
-    out += renderStatusBar(layout, mode, highlighter, message, W, H);
+    // Build the output: diff _current vs _next, emit only changed cells.
+    let out = Terminal.hideCursor;
+    if (this._needsClear) {
+      out += Terminal.clearScreen;
+      this._current.markDirty(); // ensure all cells are re-emitted
+      this._needsClear = false;
+    }
+    out += this._diffOutput();
+    out += Terminal.reset;
 
-    // Place cursor
+    // Place the real terminal cursor.
     if (!searchPanel.active) {
       const activePane = layout.activePane;
       if (activePane.buffer && !layout.browserFocused) {
         if (activePane.isCursorVisible()) {
-          out += T.moveTo(activePane.cursorAbsY() + 1, activePane.cursorAbsX() + 1);
-          out += T.showCursor;
+          out += Terminal.moveTo(activePane.cursorAbsY() + 1, activePane.cursorAbsX() + 1);
+          out += Terminal.showCursor;
         }
       }
     } else {
-      // Cursor in search input
       const inputRow = Math.floor(H * 0.2) + 2;
       const inputCol = 3 + searchPanel.needle.length;
-      out += T.moveTo(inputRow, inputCol + 1);
-      out += T.showCursor;
+      out += Terminal.moveTo(inputRow, inputCol + 1);
+      out += Terminal.showCursor;
     }
 
     this.term.append(out);
     this.term.flush();
+
+    // Commit: _next becomes the new current frame.
+    this._current.copyFrom(this._next);
   }
 
-  private _renderPane(pane: Pane, isActive: boolean, highlighter: Highlighter): string {
-    let out = '';
-    const { x, y, width, height } = pane;
-    if (width <= 0 || height <= 0) return '';
+  // ── virtual-screen diff ──────────────────────────────────────────────────
 
-    // Title bar (row 0 of pane = screen row y)
-    out += T.moveTo(y + 1, x + 1);
-    out += T.bgRgb(isActive ? THEME.titleActiveBg : THEME.titleInactiveBg);
-    out += T.fgRgb(isActive ? THEME.titleActiveFg : THEME.titleInactiveFg);
-    if (isActive) out += T.bold;
+  private _diffOutput(): string {
+    const H = this._next.rows;
+    const W = this._next.cols;
+    let out = '';
+
+    let lastRow = -1;
+    let lastCol = -1;
+
+    // Track the style currently "live" in the terminal so we only emit
+    // sequences when the style actually changes.
+    let lastFg: RGB | null = null;
+    let lastBg: RGB | null = null;
+    let lastBold    = false;
+    let lastDim     = false;
+    let lastReverse = false;
+
+    for (let r = 0; r < H; r++) {
+      const curRow = this._current.cells[r];
+      const nxtRow = this._next.cells[r];
+
+      for (let c = 0; c < W; c++) {
+        const cur = curRow[c];
+        const nxt = nxtRow[c];
+
+        if (cellsEqual(cur, nxt)) continue;
+
+        // Emit cursor-move unless we're continuing a contiguous run on the
+        // same row (avoids a moveTo for every consecutive changed cell).
+        if (r !== lastRow || c !== lastCol + 1) {
+          out += Terminal.moveTo(r + 1, c + 1);
+        }
+
+        // If any additive attribute (bold/dim/reverse) needs to be turned OFF,
+        // we must reset first (there's no individual "off" sequence).
+        const needsReset =
+          (lastBold    && !nxt.bold)    ||
+          (lastDim     && !nxt.dim)     ||
+          (lastReverse && !nxt.reverse);
+
+        if (needsReset) {
+          out += Terminal.reset;
+          lastFg = null; lastBg = null;
+          lastBold = false; lastDim = false; lastReverse = false;
+        }
+
+        if (!rgbEqual(nxt.fg, lastFg)) { out += Terminal.fgRgb(nxt.fg); lastFg = nxt.fg; }
+        if (!rgbEqual(nxt.bg, lastBg)) { out += Terminal.bgRgb(nxt.bg); lastBg = nxt.bg; }
+        if (nxt.bold    && !lastBold)    { out += Terminal.bold;    lastBold    = true; }
+        if (nxt.dim     && !lastDim)     { out += Terminal.dim;     lastDim     = true; }
+        if (nxt.reverse && !lastReverse) { out += Terminal.reverse; lastReverse = true; }
+
+        out += nxt.char;
+        lastRow = r;
+        lastCol = c;
+      }
+    }
+
+    return out;
+  }
+
+  // ── blank-fill helpers ───────────────────────────────────────────────────
+
+  /** Fill _next with blank cells (space, THEME.bg background). */
+  private _clearNext(W: number, H: number): void {
+    const blank = {
+      char: ' ',
+      fg: THEME.fg as RGB,
+      bg: THEME.bg as RGB,
+      bold: false, dim: false, reverse: false,
+    };
+    for (let r = 0; r < H; r++)
+      for (let c = 0; c < W; c++)
+        this._next.cells[r][c] = { ...blank };
+  }
+
+  // ── pane rendering ───────────────────────────────────────────────────────
+
+  private _renderPane(pane: Pane, isActive: boolean, highlighter: Highlighter): void {
+    const ctx = this._ctx;
+    const { x, y, width, height } = pane;
+    if (width <= 0 || height <= 0) return;
+
+    // Title bar (row 0 of the pane).
+    ctx.moveTo(y, x);
+    ctx.setBg(isActive ? THEME.titleActiveBg : THEME.titleInactiveBg);
+    ctx.setFg(isActive ? THEME.titleActiveFg : THEME.titleInactiveFg);
+    if (isActive) ctx.setBold(true);
 
     const name = pane.buffer
       ? ` ${pane.buffer.filePath ?? pane.buffer.name}${pane.buffer.modified ? ' ●' : ''} `
       : ' [No File] ';
-    out += fitStr(name, width);
-    out += T.reset;
+    ctx.write(fitStr(name, width));
+    ctx.reset();
 
-    // Content rows
+    // Content rows.
     const gw = pane.gutterWidth();
     const cw = pane.contentWidth();
     const ch = pane.contentHeight();
 
     for (let row = 0; row < ch; row++) {
-      const lineNum = pane.scrollLine + row;
+      const lineNum   = pane.scrollLine + row;
       const screenRow = y + 1 + row; // +1 for title bar
-      out += T.moveTo(screenRow + 1, x + 1); // moveTo is 1-indexed
 
       const isCursorLine = isActive && pane.buffer !== null && lineNum === pane.cursor.line;
 
+      ctx.moveTo(screenRow, x);
       if (isCursorLine) {
-        out += T.bgRgb(THEME.currentLineBg);
+        ctx.setBg(THEME.currentLineBg);
       } else {
-        out += T.bgRgb(THEME.bg);
+        ctx.setBg(THEME.bg);
       }
 
       if (pane.buffer && lineNum < pane.buffer.lineCount) {
         // Gutter
-        out += T.fgRgb(THEME.gutterFg);
-        if (isCursorLine) out += T.bold;
+        ctx.setFg(THEME.gutterFg);
+        if (isCursorLine) ctx.setBold(true);
         const numStr = String(lineNum + 1).padStart(gw - 1) + ' ';
-        out += numStr;
-        out += T.reset;
-        if (isCursorLine) out += T.bgRgb(THEME.currentLineBg);
+        ctx.write(numStr);
+        ctx.reset();
+        if (isCursorLine) ctx.setBg(THEME.currentLineBg);
 
         // Content
         const lineStr = pane.buffer.getLine(lineNum);
-        const tokens = highlighter.getTokensForLine(lineNum, pane.buffer);
-        out += this._renderLine(
-          lineStr, tokens,
-          pane.scrollCol, cw,
-          isActive, isCursorLine, pane.cursor.col
-        );
+        const tokens  = highlighter.getTokensForLine(lineNum, pane.buffer);
+        this._renderLine(lineStr, tokens, pane.scrollCol, cw, isActive, isCursorLine, pane.cursor.col);
       } else {
         // Past end of file
-        out += T.fgRgb(THEME.gutterFg);
-        out += T.dim;
-        out += '~'.padEnd(gw);
-        out += T.reset;
-        if (isCursorLine) out += T.bgRgb(THEME.currentLineBg);
-        out += ' '.repeat(Math.max(0, cw));
+        ctx.setFg(THEME.gutterFg);
+        ctx.setDim(true);
+        ctx.write('~'.padEnd(gw));
+        ctx.reset();
+        if (isCursorLine) ctx.setBg(THEME.currentLineBg);
+        ctx.write(' '.repeat(Math.max(0, cw)));
       }
 
-      out += T.reset;
+      ctx.reset();
     }
-
-    return out;
   }
 
   private _renderLine(
@@ -153,13 +249,13 @@ export class Renderer {
     isActive: boolean,
     isCursorLine: boolean,
     cursorCol: number
-  ): string {
-    if (visibleWidth <= 0) return '';
-    let out = '';
+  ): void {
+    const ctx = this._ctx;
+    if (visibleWidth <= 0) return;
 
-    // Build per-column token type array
+    // Build per-column token-type map.
     const len = line.length;
-    const typeMap: Array<string> = new Array(len).fill('normal');
+    const typeMap: string[] = new Array(len).fill('normal');
     for (const tok of tokens) {
       for (let ci = tok.start; ci < tok.start + tok.length && ci < len; ci++) {
         typeMap[ci] = tok.type;
@@ -170,228 +266,229 @@ export class Renderer {
     let lastType = '';
     let col = scrollCol;
 
-    // Render visible characters
     while (col < visEnd) {
       const isCursor = isActive && isCursorLine && col === cursorCol;
-      const tokType = typeMap[col] ?? 'normal';
+      const tokType  = typeMap[col] ?? 'normal';
 
       if (isCursor) {
-        out += T.reset;
-        out += T.reverse;
-        out += T.fgRgb(THEME.bg);
-        out += line[col];
-        out += T.reset;
-        if (isCursorLine) out += T.bgRgb(THEME.currentLineBg);
+        ctx.reset();
+        ctx.setReverse(true);
+        ctx.setFg(THEME.bg);
+        ctx.write(line[col]);
+        ctx.reset();
+        if (isCursorLine) ctx.setBg(THEME.currentLineBg);
         lastType = '';
       } else {
         if (tokType !== lastType) {
-          const color = tokenColor(tokType as never);
-          out += T.fgRgb(color);
+          ctx.setFg(tokenColor(tokType as never));
           lastType = tokType;
         }
-        out += line[col];
+        ctx.write(line[col]);
       }
       col++;
     }
 
-    // Padding / cursor after end of line
-    const rendered = visEnd - scrollCol;
+    // Padding / cursor past end of line.
+    const rendered  = visEnd - scrollCol;
     const remaining = visibleWidth - rendered;
 
     if (remaining > 0) {
       if (isActive && isCursorLine && cursorCol >= visEnd && cursorCol - scrollCol < visibleWidth) {
-        // Cursor is past end of line — show it as a space
         const spacesBeforeCursor = cursorCol - visEnd;
-        out += T.reset;
-        if (isCursorLine) out += T.bgRgb(THEME.currentLineBg);
-        if (spacesBeforeCursor > 0) out += ' '.repeat(spacesBeforeCursor);
-        out += T.reset;
-        out += T.reverse;
-        out += T.fgRgb(THEME.bg);
-        out += ' ';
-        out += T.reset;
-        if (isCursorLine) out += T.bgRgb(THEME.currentLineBg);
+        ctx.reset();
+        if (isCursorLine) ctx.setBg(THEME.currentLineBg);
+        if (spacesBeforeCursor > 0) ctx.write(' '.repeat(spacesBeforeCursor));
+        ctx.reset();
+        ctx.setReverse(true);
+        ctx.setFg(THEME.bg);
+        ctx.write(' ');
+        ctx.reset();
+        if (isCursorLine) ctx.setBg(THEME.currentLineBg);
         const afterCursor = remaining - spacesBeforeCursor - 1;
-        if (afterCursor > 0) out += ' '.repeat(afterCursor);
+        if (afterCursor > 0) ctx.write(' '.repeat(afterCursor));
       } else {
-        out += T.reset;
-        if (isCursorLine) out += T.bgRgb(THEME.currentLineBg);
-        out += ' '.repeat(remaining);
+        ctx.reset();
+        if (isCursorLine) ctx.setBg(THEME.currentLineBg);
+        ctx.write(' '.repeat(remaining));
       }
     }
-
-    return out;
   }
 
-  private _renderSeparators(layout: Layout): string {
-    let out = '';
+  // ── separator rendering ──────────────────────────────────────────────────
+
+  private _renderSeparators(layout: Layout): void {
+    const ctx = this._ctx;
     const seps = layout.separators();
 
     for (const sep of seps) {
-      out += T.fgRgb(THEME.borderInactive);
-      out += T.bgRgb(THEME.bg);
+      ctx.setFg(THEME.borderInactive);
+      ctx.setBg(THEME.bg);
 
       if (sep.type === 'vertical') {
         for (let row = sep.start; row <= sep.end; row++) {
-          out += T.moveTo(row + 1, sep.pos + 1);
-          out += '│';
+          ctx.moveTo(row, sep.pos);
+          ctx.write('│');
         }
       } else {
-        // Horizontal
-        out += T.moveTo(sep.pos + 1, sep.start + 1);
-        out += '─'.repeat(sep.end - sep.start + 1);
+        ctx.moveTo(sep.pos, sep.start);
+        ctx.write('─'.repeat(sep.end - sep.start + 1));
       }
-      out += T.reset;
+      ctx.reset();
     }
-
-    return out;
   }
 
-  private _renderFileBrowser(fb: FileBrowser, layout: Layout, isActive: boolean): string {
-    let out = '';
+  // ── file browser rendering ───────────────────────────────────────────────
+
+  private _renderFileBrowser(fb: FileBrowser, layout: Layout, isActive: boolean): void {
+    const ctx = this._ctx;
     const bounds = layout.browserBounds();
     const { x, y, w, h } = bounds;
-    if (w <= 0 || h <= 0) return '';
+    if (w <= 0 || h <= 0) return;
 
     // Title
-    out += T.moveTo(y + 1, x + 1);
-    out += T.bgRgb(isActive ? THEME.titleActiveBg : THEME.titleInactiveBg);
-    out += T.fgRgb(isActive ? THEME.titleActiveFg : THEME.titleInactiveFg);
-    if (isActive) out += T.bold;
-    out += fitStr(' Files', w);
-    out += T.reset;
+    ctx.moveTo(y, x);
+    ctx.setBg(isActive ? THEME.titleActiveBg : THEME.titleInactiveBg);
+    ctx.setFg(isActive ? THEME.titleActiveFg : THEME.titleInactiveFg);
+    if (isActive) ctx.setBold(true);
+    ctx.write(fitStr(' Files', w));
+    ctx.reset();
 
     fb.adjustScroll(h - 1);
 
     // Entries
     for (let row = 0; row < h - 1; row++) {
       const entryIdx = fb.scrollOffset + row;
-      const entry = fb.entries[entryIdx];
-      out += T.moveTo(y + 1 + row + 1, x + 1);
+      const entry    = fb.entries[entryIdx];
+      ctx.moveTo(y + 1 + row, x);
 
       const isSel = entryIdx === fb.selectedIndex && isActive;
       if (isSel) {
-        out += T.bgRgb(THEME.selectionBg);
-        out += T.fgRgb(THEME.fg);
+        ctx.setBg(THEME.selectionBg);
+        ctx.setFg(THEME.fg);
       } else {
-        out += T.bgRgb(THEME.bgAlt);
+        ctx.setBg(THEME.bgAlt);
         if (entry?.isDir) {
-          out += T.fgRgb(THEME.blue);
+          ctx.setFg(THEME.blue);
         } else {
-          out += T.fgRgb(THEME.fgDim);
+          ctx.setFg(THEME.fgDim);
         }
       }
 
       if (entry) {
-        const icon = entry.isDir ? '▸ ' : '  ';
+        const icon        = entry.isDir ? '▸ ' : '  ';
         const displayName = icon + entry.name;
-        out += fitStr(displayName, w);
+        ctx.write(fitStr(displayName, w));
       } else {
-        out += ' '.repeat(w);
+        ctx.write(' '.repeat(w));
       }
-      out += T.reset;
+      ctx.reset();
     }
-
-    return out;
   }
 
-  private _renderSearchPanel(sp: SearchPanel, W: number, H: number): string {
-    let out = '';
+  // ── search panel rendering ───────────────────────────────────────────────
 
-    // Panel dimensions
+  private _renderSearchPanel(sp: SearchPanel, W: number, H: number): void {
+    const ctx = this._ctx;
+
     const panelH = Math.min(Math.floor(H * 0.7), 30);
     const panelW = Math.min(W - 4, 90);
     const panelX = Math.floor((W - panelW) / 2);
     const panelY = Math.floor(H * 0.15);
 
     // Background fill
-    out += T.bgRgb(THEME.surface0);
+    ctx.setBg(THEME.surface0);
+    ctx.setFg(THEME.fg);
     for (let row = 0; row < panelH; row++) {
-      out += T.moveTo(panelY + row + 1, panelX + 1);
-      out += ' '.repeat(panelW);
+      ctx.moveTo(panelY + row, panelX);
+      ctx.write(' '.repeat(panelW));
     }
 
     // Title
-    out += T.moveTo(panelY + 1, panelX + 1);
-    out += T.bgRgb(THEME.surface1);
-    out += T.fgRgb(THEME.blue);
-    out += T.bold;
+    ctx.moveTo(panelY, panelX);
+    ctx.setBg(THEME.surface1);
+    ctx.setFg(THEME.blue);
+    ctx.setBold(true);
     const title = sp.mode === 'file' ? ' Search in file ' : ' Search project ';
-    out += fitStr(title, panelW);
-    out += T.reset;
+    ctx.write(fitStr(title, panelW));
+    ctx.reset();
 
-    // Search input
+    // Search input (0-indexed row panelY+2, matching original 1-indexed T.moveTo(panelY+3,...))
     const inputRow = panelY + 2;
-    out += T.moveTo(inputRow + 1, panelX + 1);
-    out += T.bgRgb(THEME.surface1);
-    out += T.fgRgb(THEME.fg);
-    const prompt = '> ';
+    ctx.moveTo(inputRow, panelX);
+    ctx.setBg(THEME.surface1);
+    ctx.setFg(THEME.fg);
+    const prompt       = '> ';
     const inputDisplay = prompt + sp.needle;
-    out += fitStr(inputDisplay, panelW);
-    out += T.reset;
+    ctx.write(fitStr(inputDisplay, panelW));
+    ctx.reset();
 
     // Separator
-    out += T.moveTo(inputRow + 2, panelX + 1);
-    out += T.fgRgb(THEME.borderInactive);
-    out += T.bgRgb(THEME.surface0);
-    out += '─'.repeat(panelW);
-    out += T.reset;
+    ctx.moveTo(inputRow + 1, panelX);
+    ctx.setFg(THEME.borderInactive);
+    ctx.setBg(THEME.surface0);
+    ctx.write('─'.repeat(panelW));
+    ctx.reset();
 
     // Results
     if (sp.loading) {
-      out += T.moveTo(inputRow + 3, panelX + 1);
-      out += T.bgRgb(THEME.surface0);
-      out += T.fgRgb(THEME.overlay);
-      out += '  Searching...'.padEnd(panelW);
-      out += T.reset;
+      ctx.moveTo(inputRow + 2, panelX);
+      ctx.setBg(THEME.surface0);
+      ctx.setFg(THEME.overlay);
+      ctx.write('  Searching...'.padEnd(panelW));
+      ctx.reset();
     } else {
       const resultsH = panelH - 4;
       sp.adjustScroll(resultsH);
 
       for (let row = 0; row < resultsH; row++) {
-        const idx = sp.scrollOffset + row;
+        const idx    = sp.scrollOffset + row;
         const result = sp.results[idx];
-        out += T.moveTo(inputRow + 3 + row + 1, panelX + 1);
+        ctx.moveTo(inputRow + 3 + row, panelX);
 
         if (result) {
           const isSel = idx === sp.selectedIndex;
           if (isSel) {
-            out += T.bgRgb(THEME.selectionBg);
-            out += T.fgRgb(THEME.fg);
+            ctx.setBg(THEME.selectionBg);
+            ctx.setFg(THEME.fg);
           } else {
-            out += T.bgRgb(THEME.surface0);
-            out += T.fgRgb(THEME.fgDim);
+            ctx.setBg(THEME.surface0);
+            ctx.setFg(THEME.fgDim);
           }
 
-          const path = sp.getResultPath(result);
-          const lineNo = sp.getResultLine(result) + 1;
-          const loc = `${basename(path)}:${lineNo}`;
+          const path    = sp.getResultPath(result);
+          const lineNo  = sp.getResultLine(result) + 1;
+          const loc     = `${basename(path)}:${lineNo}`;
           const snippet = result.snippet.trimStart().slice(0, panelW - loc.length - 4);
-          const entry = ` ${loc}  ${snippet}`;
-          out += fitStr(entry, panelW);
+          const entry   = ` ${loc}  ${snippet}`;
+          ctx.write(fitStr(entry, panelW));
         } else {
-          out += T.bgRgb(THEME.surface0);
-          out += ' '.repeat(panelW);
+          ctx.setBg(THEME.surface0);
+          ctx.write(' '.repeat(panelW));
         }
-        out += T.reset;
+        ctx.reset();
       }
     }
 
-    // Result count
-    out += T.moveTo(panelY + panelH, panelX + 1);
-    out += T.bgRgb(THEME.surface1);
-    out += T.fgRgb(THEME.overlay);
+    // Result count footer
+    ctx.moveTo(panelY + panelH - 1, panelX);
+    ctx.setBg(THEME.surface1);
+    ctx.setFg(THEME.overlay);
     const countStr = sp.results.length > 0
       ? ` ${sp.results.length} result${sp.results.length === 1 ? '' : 's'}`
       : sp.needle ? '  No results' : '  Type to search';
-    out += fitStr(countStr, panelW);
-    out += T.reset;
-
-    return out;
+    ctx.write(fitStr(countStr, panelW));
+    ctx.reset();
   }
 }
+
+// ── helpers ──────────────────────────────────────────────────────────────────
 
 function fitStr(s: string, width: number): string {
   if (s.length >= width) return s.slice(0, width);
   return s.padEnd(width);
+}
+
+function rgbEqual(a: RGB | null, b: RGB | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
 }
