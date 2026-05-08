@@ -10,6 +10,7 @@ import type { EditorMode } from '../ui/StatusBar.js';
 import { renderStatusBar } from '../ui/StatusBar.js';
 import { THEME, tokenColor } from '../highlight/tokens.js';
 import type { LineTokens } from '../highlight/tokens.js';
+import { TAB_CHAR_COUNT } from '../constants.js';
 import { basename } from 'path';
 
 export class Renderer {
@@ -461,7 +462,11 @@ export class Renderer {
           const path    = sp.getResultPath(result);
           const lineNo  = sp.getResultLine(result) + 1;
           const loc     = `${basename(path)}:${lineNo}`;
-          const snippet = result.snippet.trimStart().slice(0, panelW - loc.length - 4);
+          // Snippet starts at visual col panelX + 1 (space) + loc.length + 2 (separator).
+          // Pre-expand tabs from that col so slice/fitStr work in visual-width units.
+          const snippetStartCol = panelX + loc.length + 3;
+          const expandedSnippet = expandTabsFromCol(result.snippet.trimStart(), snippetStartCol);
+          const snippet = expandedSnippet.slice(0, panelW - loc.length - 4);
           const entry   = ` ${loc}  ${snippet}`;
           ctx.write(fitStr(entry, panelW));
         } else {
@@ -485,6 +490,24 @@ export class Renderer {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+/** Expand tab characters in `text` to spaces using TAB_CHAR_COUNT-column stops,
+ *  starting from the given absolute screen column `startCol`. */
+function expandTabsFromCol(text: string, startCol: number): string {
+  let out = '';
+  let col = startCol;
+  for (const ch of text) {
+    if (ch === '\t') {
+      const spaces = TAB_CHAR_COUNT - (col % TAB_CHAR_COUNT);
+      out += ' '.repeat(spaces);
+      col += spaces;
+    } else {
+      out += ch;
+      col++;
+    }
+  }
+  return out;
+}
 
 function fitStr(s: string, width: number): string {
   if (s.length >= width) return s.slice(0, width);
