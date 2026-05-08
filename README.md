@@ -23,6 +23,15 @@ npm run build
 node dist/index.js [file]   # opens file, or starts with empty buffer
 ```
 
+Optionally, make the compiled output directly executable:
+
+```bash
+npm run make-exec   # adds #!/usr/bin/env node shebang and chmod +x dist/index.js
+./dist/index.js [file]
+```
+
+Run `make-exec` once after each `npm run build`. It is idempotent — running it multiple times is safe.
+
 ## Key Bindings
 
 | Key | Action |
