@@ -149,6 +149,21 @@ export class EditorTest {
     }
   }
 
+  /*
+   * Assert the terminal cursor sits at the given 0-indexed row and column.
+   * After each render the editor leaves the cursor at the active input position,
+   * so TerminalScreen.getCursor() reflects where input will appear next.
+   */
+  assertCursorAt(row: number, col: number, message?: string): void {
+    const pos = this.screen.getCursor();
+    if (pos.row !== row || pos.col !== col) {
+      throw new Error(
+        message ??
+          `Expected cursor at row=${row} col=${col}, got row=${pos.row} col=${pos.col}\n\n${this.screen.dump()}`
+      );
+    }
+  }
+
   isAlive(): boolean {
     return this.pty?.isAlive() ?? false;
   }

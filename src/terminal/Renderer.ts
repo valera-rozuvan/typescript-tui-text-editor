@@ -87,9 +87,12 @@ export class Renderer {
         }
       }
     } else {
-      const inputRow = Math.floor(H * 0.2) + 2;
-      const inputCol = 3 + searchPanel.needle.length;
-      out += Terminal.moveTo(inputRow, inputCol + 1);
+      const panelW   = Math.min(W - 4, 90);
+      const panelX   = Math.floor((W - panelW) / 2);
+      const panelY   = Math.floor(H * 0.15);
+      const inputRow = panelY + 2;                              // 0-indexed row of search input
+      const inputCol = panelX + 2 + searchPanel.needle.length; // 0-indexed col after "> " + needle
+      out += Terminal.moveTo(inputRow + 1, inputCol + 1);       // +1: ANSI is 1-indexed
       out += Terminal.showCursor;
     }
 

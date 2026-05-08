@@ -110,6 +110,11 @@ export class TerminalScreen {
     return lines.join('\n');
   }
 
+  /* Return the current cursor position (0-indexed row and col). */
+  getCursor(): { row: number; col: number } {
+    return { row: this.cursorRow, col: this.cursorCol };
+  }
+
   /* Reset the screen to the startup state. */
   reset(): void {
     this.grid = this._blank();
