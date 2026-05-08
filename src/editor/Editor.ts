@@ -27,6 +27,11 @@ export class Editor {
   private running = false;
   private _projectSearchCancel: { cancelled: boolean } | null = null;
 
+  // All buffers opened during this session, in order of first open.
+  private openBuffers: Buffer[] = [];
+  // Saved cursor/scroll position per buffer so cycling restores state.
+  private bufferCursorState = new Map<Buffer, { line: number; col: number; scrollLine: number; scrollCol: number }>();
+
   constructor() {
     this.fileBrowser = new FileBrowser(process.cwd());
     this.renderer = new Renderer(this.term);
@@ -39,20 +44,61 @@ export class Editor {
   async openFile(filePath: string): Promise<void> {
     const absPath = resolve(filePath);
     const buf = await Buffer.fromFile(absPath);
+    this.highlighter.onFilePathChange(buf);
+    this._registerBuffer(buf);
     const pane = this.layout.activePane;
     pane.buffer = buf;
     pane.cursor.setPos(0, 0);
     pane.scrollLine = 0;
     pane.scrollCol = 0;
-    this.highlighter.onFilePathChange(buf);
   }
 
   openBuffer(buf: Buffer): void {
+    this._registerBuffer(buf);
     const pane = this.layout.activePane;
     pane.buffer = buf;
     pane.cursor.setPos(0, 0);
     pane.scrollLine = 0;
     pane.scrollCol = 0;
+  }
+
+  private _registerBuffer(buf: Buffer): void {
+    if (!this.openBuffers.includes(buf)) {
+      this.openBuffers.push(buf);
+    }
+  }
+
+  private _cycleBuffer(direction: 1 | -1): void {
+    if (this.openBuffers.length <= 1) return;
+    const pane = this.layout.activePane;
+    const cur = pane.buffer;
+    // Save current cursor/scroll state.
+    if (cur) {
+      this.bufferCursorState.set(cur, {
+        line: pane.cursor.line,
+        col: pane.cursor.col,
+        scrollLine: pane.scrollLine,
+        scrollCol: pane.scrollCol,
+      });
+    }
+    const idx = cur ? this.openBuffers.indexOf(cur) : -1;
+    const newIdx = idx === -1
+      ? (direction > 0 ? 0 : this.openBuffers.length - 1)
+      : (idx + direction + this.openBuffers.length) % this.openBuffers.length;
+    const next = this.openBuffers[newIdx];
+    if (next === cur) return;
+    pane.buffer = next;
+    this.highlighter.onFilePathChange(next);
+    const saved = this.bufferCursorState.get(next);
+    if (saved) {
+      pane.cursor.setPos(saved.line, saved.col);
+      pane.scrollLine = saved.scrollLine;
+      pane.scrollCol = saved.scrollCol;
+    } else {
+      pane.cursor.setPos(0, 0);
+      pane.scrollLine = 0;
+      pane.scrollCol = 0;
+    }
   }
 
   start(): void {
@@ -182,6 +228,14 @@ export class Editor {
         }
       }
       return; // ignore other ctrl combos
+    }
+
+    if (alt) {
+      switch (key) {
+        case 'left':  this._cycleBuffer(-1); return;
+        case 'right': this._cycleBuffer(1);  return;
+      }
+      return; // ignore other alt combos
     }
 
     const pane = this.layout.activePane;
@@ -328,12 +382,17 @@ export class Editor {
         if (sel.isDir) {
           this.fileBrowser.navigateInto();
         } else {
-          // Open file in active pane
+          // Capture the target pane now; activePane may change before the async load completes.
+          const targetPane = this.layout.activePane;
           this.layout.browserFocused = false;
           this.mode = 'edit';
           Buffer.fromFile(sel.fullPath).then(buf => {
             this.highlighter.onFilePathChange(buf);
-            this.openBuffer(buf);
+            this._registerBuffer(buf);
+            targetPane.buffer = buf;
+            targetPane.cursor.setPos(0, 0);
+            targetPane.scrollLine = 0;
+            targetPane.scrollCol = 0;
             this.render();
           }).catch(err => {
             this.showMessage(`Error opening: ${err.message}`);
@@ -455,13 +514,15 @@ export class Editor {
     } else {
       // Project search result — need to open file
       const projResult = result as ProjectSearchResult;
+      // Capture the target pane now; activePane may change before the async load completes.
+      const targetPane = this.layout.activePane;
       Buffer.fromFile(projResult.filePath).then(buf => {
         this.highlighter.onFilePathChange(buf);
-        const pane = this.layout.activePane;
-        pane.buffer = buf;
-        pane.cursor.setPos(projResult.line, projResult.col);
-        pane.scrollLine = 0;
-        pane.scrollToCursor();
+        this._registerBuffer(buf);
+        targetPane.buffer = buf;
+        targetPane.cursor.setPos(projResult.line, projResult.col);
+        targetPane.scrollLine = 0;
+        targetPane.scrollToCursor();
         this.render();
       }).catch(() => {});
     }
@@ -474,9 +535,16 @@ export class Editor {
       this.showMessage('Buffer modified! Save (Ctrl+S) before closing.');
       return;
     }
+    const closedBuf = pane.buffer;
     pane.buffer = null;
     pane.cursor.setPos(0, 0);
     pane.scrollLine = 0;
     pane.scrollCol = 0;
+    // Remove from the open-buffer list if no other pane is showing it.
+    if (closedBuf && !this.layout.panes.some(p => p.buffer === closedBuf)) {
+      const bIdx = this.openBuffers.indexOf(closedBuf);
+      if (bIdx >= 0) this.openBuffers.splice(bIdx, 1);
+      this.bufferCursorState.delete(closedBuf);
+    }
   }
 }
