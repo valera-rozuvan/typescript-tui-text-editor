@@ -135,3 +135,56 @@ node unit-tests/runner.mjs --parallel --threads 8
 ```
 
 The `--threads N` flag is only meaningful together with `--parallel`. Without `--parallel` tests always run sequentially regardless of `--threads`.
+
+## UI Tests
+
+End-to-end tests that run the full editor inside a pseudo-terminal, inject
+keystrokes, and assert on screen content and saved file contents.
+
+### How it works
+
+A C native addon (`ui-tests/pty/pty.c`, built with N-API via `node-gyp`)
+wraps POSIX `forkpty()` to spawn the editor in a real PTY.  A lightweight
+TypeScript VT100 parser (`TerminalScreen`) reconstructs the virtual screen
+from the ANSI output so tests can make content assertions without a full
+terminal emulator.  See [`ui-tests/README.md`](ui-tests/README.md) for the
+full design description.
+
+### Prerequisites
+
+A standard C build toolchain (`gcc`, `make`, `python3`) — these ship with
+`build-essential` on Debian/Ubuntu.  `node-gyp` is fetched on-demand by
+`npx`; no new npm dependencies are added to `package.json`.
+
+### Building and running
+
+```bash
+# Build the native PTY addon and compile the TypeScript tests, then run
+npm run ui-test
+
+# Build only (first-time setup)
+npm run ui-test:build
+
+# Run without recompiling (after first build)
+node ui-tests/runner.mjs --no-build
+```
+
+### Structure
+
+```
+ui-tests/
+  pty/
+    pty.c                  N-API C addon (forkpty wrapper)
+    binding.gyp            node-gyp build config
+  tests/
+    PtyProcess.ts          TypeScript wrapper around the native addon
+    TerminalScreen.ts      VT100 parser / virtual screen grid
+    helpers.ts             EditorTest class, key constants, temp-file utils
+    01_startup.test.ts     Startup and initial render tests
+    02_text_input.test.ts  Typing, saving, cursor position tests
+    03_multipane.test.ts   Pane splitting and switching tests
+  runner.mjs               Test runner
+  build.sh                 One-shot build script
+  README.md                Architecture and usage documentation
+  PLAN.md                  Step-by-step implementation plan
+```

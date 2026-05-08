@@ -137,6 +137,7 @@ export class Editor {
       this.message = '';
       this.render();
     }, durationMs);
+    this.render();
   }
 
   private render(): void {

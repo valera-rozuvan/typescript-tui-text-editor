@@ -1,0 +1,1 @@
+cmd_Release/obj.target/pty_native.node := g++ -o Release/obj.target/pty_native.node -shared -pthread -rdynamic -m64  -Wl,-soname=pty_native.node -Wl,--start-group Release/obj.target/pty_native/pty.o -Wl,--end-group -lutil

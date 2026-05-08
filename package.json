@@ -7,7 +7,9 @@
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "tsc -p unit-tests/tsconfig.json && node unit-tests/runner.mjs",
-    "test:parallel": "tsc -p unit-tests/tsconfig.json && node unit-tests/runner.mjs --parallel"
+    "test:parallel": "tsc -p unit-tests/tsconfig.json && node unit-tests/runner.mjs --parallel",
+    "ui-test": "node ui-tests/runner.mjs",
+    "ui-test:build": "bash ui-tests/build.sh"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
