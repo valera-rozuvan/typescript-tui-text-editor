@@ -9,11 +9,11 @@ export const suite = 'SearchPanel';
 
 function makeFileResult(lineno = 0): FileSearchResult {
   const buf = new Buffer('hello\nworld');
-  return { buffer: buf, line: lineno, col: 0, snippet: 'hello', matchIndices: [0] };
+  return { buffer: buf, line: lineno, col: 0, snippet: 'hello', matchIndices: [0], score: 0 };
 }
 
 function makeProjectResult(lineno = 5): ProjectSearchResult {
-  return { filePath: '/some/file.ts', line: lineno, col: 0, snippet: 'code', matchIndices: [0] };
+  return { filePath: '/some/file.ts', line: lineno, col: 0, snippet: 'code', matchIndices: [0], score: 0 };
 }
 
 export const tests: TestCase[] = [

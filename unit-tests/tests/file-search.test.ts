@@ -84,17 +84,42 @@ export const tests: TestCase[] = [
     },
   },
   {
-    name: 'searchInBuffers: results sorted by buffer name then line number',
+    name: 'searchInBuffer: results sorted by score descending',
     fn: () => {
-      const b1 = new Buffer('match here\nalso match');
-      b1.filePath = '/z/zebra.txt';   // name 'zebra.txt' sorts after 'alpha.txt'
-      const b2 = new Buffer('match line');
-      b2.filePath = '/a/alpha.txt';   // name 'alpha.txt' sorts first
+      // Line order in buffer: "  match" (score 76), "match" (score 80), " match" (score 77)
+      // After sort by score desc: line 1 (80), line 2 (77), line 0 (76)
+      const b = buf('  match\nmatch\n match');
+      const results = searchInBuffer('match', b);
+      assert.equal(results.length, 3);
+      assert.equal(results[0].line, 1); // "match" at col 0 — highest score
+      assert.equal(results[1].line, 2); // " match" — second
+      assert.equal(results[2].line, 0); // "  match" — lowest
+      // scores must be non-increasing
+      assert.ok(results[0].score >= results[1].score);
+      assert.ok(results[1].score >= results[2].score);
+    },
+  },
+  {
+    name: 'searchInBuffers: results sorted by score descending across buffers',
+    fn: () => {
+      // b1 line 0 "match"       → score 80 (exact at start)
+      // b2 line 0 " match start"→ score 77 (word boundary, start penalty -1)
+      // b1 line 1 "also match"  → score 73 (word boundary, start penalty -5)
+      const b1 = new Buffer('match\nalso match');
+      b1.filePath = '/z/zebra.txt';
+      const b2 = new Buffer(' match start');
+      b2.filePath = '/a/alpha.txt';
       const results = searchInBuffers('match', [b1, b2]);
-      // b2 (alpha.txt) should come first, then two results from b1 (zebra.txt)
-      assert.equal(results[0].buffer, b2);
-      assert.equal(results[1].buffer, b1);
+      assert.equal(results.length, 3);
+      assert.equal(results[0].buffer, b1);
+      assert.equal(results[0].line, 0);  // score 80 — best
+      assert.equal(results[1].buffer, b2);
+      assert.equal(results[1].line, 0);  // score 77 — second
       assert.equal(results[2].buffer, b1);
+      assert.equal(results[2].line, 1);  // score 73 — third
+      // scores must be non-increasing
+      assert.ok(results[0].score >= results[1].score);
+      assert.ok(results[1].score >= results[2].score);
     },
   },
 ];

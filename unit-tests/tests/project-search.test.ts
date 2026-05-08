@@ -132,6 +132,34 @@ export const tests: TestCase[] = [
     },
   },
   {
+    name: 'searchProject: results sorted by score descending',
+    fn: async () => {
+      const root = mkdtempSync(join(tmpdir(), 'proj-sort-'));
+      try {
+        mkdirSync(join(root, '.git'));
+        // Exact match at start of line → highest score (~80)
+        writeFileSync(join(root, 'a.txt'), 'hello world\n');
+        // Exact match after word boundary, not at start → medium score (~74)
+        writeFileSync(join(root, 'b.txt'), 'say hello there\n');
+        // Fuzzy match with gaps → lowest score (~6)
+        writeFileSync(join(root, 'c.txt'), 'hXeXlXlXo\n');
+        let results: ProjectSearchResult[] = [];
+        const signal = { cancelled: false };
+        await searchProject('hello', root, (r) => { results = r; }, signal);
+        assert.equal(results.length, 3);
+        for (let i = 0; i < results.length - 1; i++) {
+          assert.ok(
+            results[i].score >= results[i + 1].score,
+            `result[${i}].score (${results[i].score}) < result[${i + 1}].score (${results[i + 1].score})`
+          );
+        }
+        assert.ok(results[0].snippet.startsWith('hello'), 'highest-scored result should start with needle');
+      } finally {
+        rmSync(root, { recursive: true });
+      }
+    },
+  },
+  {
     name: 'searchProject: result matchIndices are valid positions within snippet',
     fn: async () => {
       const root = makeProject();

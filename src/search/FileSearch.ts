@@ -7,6 +7,7 @@ export interface FileSearchResult {
   col: number;
   snippet: string;
   matchIndices: number[];
+  score: number;
 }
 
 export function searchInBuffer(needle: string, buf: Buffer): FileSearchResult[] {
@@ -23,10 +24,12 @@ export function searchInBuffer(needle: string, buf: Buffer): FileSearchResult[] 
         col: match.indices[0] ?? 0,
         snippet: line,
         matchIndices: match.indices,
+        score: match.score,
       });
     }
   }
 
+  results.sort((a, b) => b.score - a.score);
   return results;
 }
 
@@ -35,12 +38,6 @@ export function searchInBuffers(needle: string, buffers: Buffer[]): FileSearchRe
   for (const buf of buffers) {
     results.push(...searchInBuffer(needle, buf));
   }
-  results.sort((a, b) => {
-    // Sort by buffer name, then line number
-    const nameA = a.buffer.name;
-    const nameB = b.buffer.name;
-    if (nameA !== nameB) return nameA.localeCompare(nameB);
-    return a.line - b.line;
-  });
+  results.sort((a, b) => b.score - a.score);
   return results;
 }

@@ -9,6 +9,7 @@ export interface ProjectSearchResult {
   col: number;
   snippet: string;
   matchIndices: number[];
+  score: number;
 }
 
 const SKIP_DIRS = new Set(['.git', 'node_modules', '.next', 'dist', 'build', '__pycache__', '.cache']);
@@ -101,6 +102,7 @@ export async function searchProject(
           col: match.indices[0] ?? 0,
           snippet: line.slice(0, 200),
           matchIndices: match.indices,
+          score: match.score,
         });
       }
     }
@@ -108,10 +110,12 @@ export async function searchProject(
     fileCount++;
     // Yield to the event loop every 20 files to keep the UI responsive
     if (fileCount % 20 === 0) {
+      results.sort((a, b) => b.score - a.score);
       onResults([...results]);
       await new Promise<void>(resolve => setTimeout(() => resolve(), 0));
     }
   }
 
+  results.sort((a, b) => b.score - a.score);
   onResults([...results]);
 }

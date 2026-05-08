@@ -21,6 +21,7 @@ export const KEY = {
   CTRL_N:     '\x0e', /* Next pane */
   CTRL_B:     '\x02', /* Toggle file browser */
   CTRL_F:     '\x06', /* In-file search */
+  CTRL_P:     '\x10', /* Project search */
   CTRL_W:     '\x17', /* Close pane buffer */
   ESCAPE:     '\x1b',
   ENTER:      '\x0d',
