@@ -227,4 +227,51 @@ export const tests: TestCase[] = [
       assert.equal(evs[0].key, '\\');
     },
   },
+  {
+    name: 'Alt+1 produces alt=true with key "1"',
+    fn: () => {
+      const evs = parseKeys(bytes(0x1b, 0x31)); // ESC 1
+      assert.equal(evs.length, 1);
+      assert.equal(evs[0].alt, true);
+      assert.equal(evs[0].ctrl, false);
+      assert.equal(evs[0].key, '1');
+    },
+  },
+  {
+    name: 'Alt+2 produces alt=true with key "2"',
+    fn: () => {
+      const evs = parseKeys(bytes(0x1b, 0x32)); // ESC 2
+      assert.equal(evs.length, 1);
+      assert.equal(evs[0].alt, true);
+      assert.equal(evs[0].key, '2');
+    },
+  },
+  {
+    name: 'Alt+3 produces alt=true with key "3"',
+    fn: () => {
+      const evs = parseKeys(bytes(0x1b, 0x33)); // ESC 3
+      assert.equal(evs.length, 1);
+      assert.equal(evs[0].alt, true);
+      assert.equal(evs[0].key, '3');
+    },
+  },
+  {
+    name: 'Alt+4 produces alt=true with key "4"',
+    fn: () => {
+      const evs = parseKeys(bytes(0x1b, 0x34)); // ESC 4
+      assert.equal(evs.length, 1);
+      assert.equal(evs[0].alt, true);
+      assert.equal(evs[0].key, '4');
+    },
+  },
+  {
+    name: 'Ctrl+1 in standard terminals sends plain "1" (no ctrl modifier)',
+    fn: () => {
+      // Standard terminals send 0x31 for Ctrl+1 — no distinct ctrl sequence
+      const evs = parseKeys(bytes(0x31)); // just '1'
+      assert.equal(evs.length, 1);
+      assert.equal(evs[0].key, '1');
+      assert.equal(evs[0].ctrl, false);
+    },
+  },
 ];

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { Layout } from '../../dist/ui/Layout.js';
+import { Buffer } from '../../dist/editor/Buffer.js';
 export const suite = 'Layout';
 export const tests = [
     {
@@ -232,6 +233,43 @@ export const tests = [
             const [p0, p1] = l.panes;
             assert.ok(p0.y < p1.y);
             assert.ok(p0.y + p0.height <= p1.y);
+        },
+    },
+    {
+        name: 'setMode: new panes inherit the active pane buffer',
+        fn: () => {
+            const l = new Layout();
+            const buf = new Buffer('hello');
+            l.panes[0].buffer = buf;
+            l.setMode('hsplit2');
+            assert.equal(l.panes[1].buffer, buf, 'new pane should show the active buffer');
+        },
+    },
+    {
+        name: 'setMode: quad new panes all inherit the active buffer',
+        fn: () => {
+            const l = new Layout();
+            const buf = new Buffer('hello');
+            l.panes[0].buffer = buf;
+            l.setMode('quad');
+            assert.equal(l.panes[1].buffer, buf);
+            assert.equal(l.panes[2].buffer, buf);
+            assert.equal(l.panes[3].buffer, buf);
+        },
+    },
+    {
+        name: 'setMode: existing pane buffers not overwritten when adding new panes',
+        fn: () => {
+            const l = new Layout();
+            const buf0 = new Buffer('pane0');
+            const buf1 = new Buffer('pane1');
+            l.panes[0].buffer = buf0;
+            l.setMode('hsplit2');
+            l.panes[1].buffer = buf1;
+            // Going to quad: pane0 and pane1 keep their buffers, new panes get active buf
+            l.setMode('quad');
+            assert.equal(l.panes[0].buffer, buf0);
+            assert.equal(l.panes[1].buffer, buf1);
         },
     },
 ];

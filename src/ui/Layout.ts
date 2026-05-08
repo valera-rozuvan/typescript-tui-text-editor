@@ -26,9 +26,13 @@ export class Layout {
     const prevPanes = this.panes.slice();
     this.mode = mode;
 
-    // Preserve existing panes, add new empty ones as needed
+    // Preserve existing panes, add new ones inheriting the active buffer
     const needed = mode === 'quad' ? 4 : mode === 'single' ? 1 : 2;
-    while (prevPanes.length < needed) prevPanes.push(new Pane());
+    while (prevPanes.length < needed) {
+      const newPane = new Pane();
+      newPane.buffer = prevPanes[this.activePaneIndex]?.buffer ?? null;
+      prevPanes.push(newPane);
+    }
     this.panes = prevPanes.slice(0, needed);
 
     if (this.activePaneIndex >= this.panes.length) {

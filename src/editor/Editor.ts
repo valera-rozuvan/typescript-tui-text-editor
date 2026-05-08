@@ -196,11 +196,6 @@ export class Editor {
         case 'N': this.layout.prevPane(); return;
         case 'w': this._closeActivePane(); return;
 
-        case '1': this.layout.setMode('single'); return;
-        case '2': this.layout.setMode('hsplit2'); return;
-        case '3': this.layout.setMode('vsplit2'); return;
-        case '4': this.layout.setMode('quad'); return;
-
         case 'left':  {
           const p = this.layout.activePane;
           if (p.buffer) { p.cursor.moveWordLeft(p.buffer); p.scrollToCursor(); }
@@ -234,6 +229,10 @@ export class Editor {
       switch (key) {
         case 'left':  this._cycleBuffer(-1); return;
         case 'right': this._cycleBuffer(1);  return;
+        case '1': this.layout.setMode('single'); return;
+        case '2': this.layout.setMode('hsplit2'); return;
+        case '3': this.layout.setMode('vsplit2'); return;
+        case '4': this.layout.setMode('quad'); return;
       }
       return; // ignore other alt combos
     }

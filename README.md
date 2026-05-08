@@ -37,10 +37,10 @@ node dist/index.js [file]   # opens file, or starts with empty buffer
 | `Ctrl+W` | Close active pane buffer |
 | `Alt+→` | Next open buffer in active pane |
 | `Alt+←` | Previous open buffer in active pane |
-| `Ctrl+1` | Single pane layout |
-| `Ctrl+2` | Two panes side by side |
-| `Ctrl+3` | Two panes top/bottom |
-| `Ctrl+4` | Four pane quad layout |
+| `Alt+1` | Single pane layout |
+| `Alt+2` | Two panes side by side |
+| `Alt+3` | Two panes top/bottom |
+| `Alt+4` | Four pane quad layout |
 | `Ctrl+←/→` | Move by word |
 | `Ctrl+Home/End` | Jump to file start/end |
 | `Home / End` | Line start/end |
