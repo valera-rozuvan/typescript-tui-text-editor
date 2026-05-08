@@ -4,6 +4,7 @@ import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { PtyProcess } from './PtyProcess.js';
 import { TerminalScreen } from './TerminalScreen.js';
+import { activeDebugServer } from './debug.js';
 
 const _dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -37,6 +38,15 @@ export const KEY = {
   ARROW_RIGHT:'\x1b[C',
   ARROW_LEFT: '\x1b[D',
 };
+
+/* ── Sequence description (for debug step labels) ────────────────────────── */
+
+function _describeSeq(seq: string): string {
+  for (const [name, val] of Object.entries(KEY)) {
+    if (val === seq) return name;
+  }
+  return JSON.stringify(seq);
+}
 
 /* ── Temp-file helpers ────────────────────────────────────────────────────── */
 
@@ -87,6 +97,7 @@ export class EditorTest {
     this.pty = new PtyProcess(NODE_EXEC, [EDITOR_PATH, ...fileArgs], this.cols, this.rows, this.cwd);
     const output = await this.pty.readOutput(idleMs, 8000);
     this.screen.feed(output);
+    await activeDebugServer?.notifyStep('start()', this.screen);
   }
 
   /*
@@ -98,6 +109,7 @@ export class EditorTest {
     this.pty.write(sequence);
     const output = await this.pty.readOutput(idleMs, 5000);
     this.screen.feed(output);
+    await activeDebugServer?.notifyStep(`keys(${_describeSeq(sequence)})`, this.screen);
   }
 
   /* Type individual printable characters one by one. */

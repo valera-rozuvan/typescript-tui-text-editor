@@ -131,6 +131,104 @@ full terminal emulator.
 
 ---
 
+---
+
+## Step 8 — Debug Step-Through Observer
+
+**Goal:** Make test failures easier to diagnose by letting a developer attach
+a second terminal to a running test session and observe the virtual PTY screen
+state at each step, with the ability to pause and advance one interaction at a
+time.
+
+**Motivation:** When a UI test fails the only feedback is the
+`screen.dump()` snapshot captured at the point of the assertion.  It is
+impossible to see what the screen looked like after earlier steps, or to watch
+the editor respond to each keystroke in real time.  A separate observer
+terminal solves this without changing how tests are written.
+
+### Architecture
+
+```
+Terminal 1  node ui-tests/runner.mjs --debug
+               ↓  starts DebugServer (Unix socket)
+               ↓  waits for observer to connect
+               ↓  per step: sends screen → blocks on "next"
+
+Terminal 2  node ui-tests/observer.mjs <socket-path>
+               ↓  connects to socket
+               ↓  renders virtual screen after each step
+               ↓  keypresses send next / run / run_all back to runner
+```
+
+Communication uses **newline-delimited JSON over a Unix domain socket**
+(`node:net`).  No new npm dependencies.
+
+### Key decisions
+
+**Unix domain socket, not a pipe or HTTP.**  A socket is bidirectional
+(observer can send `next` back to the runner) and local-only.  A named pipe
+would need two files for bidirectional traffic.  HTTP/WebSocket would be
+heavier than needed.
+
+**ES module live binding for the singleton.**  `tests/debug.ts` exports
+`let activeDebugServer`.  In Node.js ESM, re-assigning an exported `let`
+from within the exporting module is immediately visible to all importers
+(live bindings).  The runner imports `setDebugServer` and calls it *before*
+any test file is loaded, so every subsequent `import { activeDebugServer }`
+in `helpers.ts` sees the live value — no global variable, no environment
+variable, no monkey-patching.
+
+**Step granularity: after `start()` and `keys()` only.**  These are the
+only points where the screen state changes.  Pausing after every assertion
+would add noise without additional information.
+
+**`_runToEnd` and `_runAll` flags.**  When the observer sends `run`, the
+server sets `_runToEnd = true` for the current test (reset by `setContext`
+at the start of the next test).  `run_all` sets `_runAll = true` for the
+remainder of the session.  If the observer disconnects, `_runAll` is set
+automatically so the runner finishes without hanging.
+
+**`_describeSeq` in helpers.**  Raw byte sequences like `\x11` are logged
+as human-readable names (`CTRL_Q`) by iterating over the `KEY` map.
+Unknown sequences fall back to `JSON.stringify`.
+
+**Observer is plain JS (`observer.mjs`), not TypeScript.**  It has no
+dependencies on the compiled test code and does not need to be rebuilt.
+Keeping it as a self-contained `.mjs` file means it can be run immediately
+after `--debug` output appears without a build step.
+
+### Protocol
+
+**Runner → Observer:**
+
+| Message | When sent |
+|---------|-----------|
+| `{ type: "step", suite, test, action, screen, cursor }` | After each `start()` or `keys()` call |
+| `{ type: "test_pass", suite, test }` | After a test case passes |
+| `{ type: "test_fail", suite, test, error }` | After a test case fails |
+| `{ type: "done" }` | After all suites have run |
+
+**Observer → Runner:**
+
+| Message | Effect |
+|---------|--------|
+| `{ type: "next" }` | Advance one step |
+| `{ type: "run" }` | Finish current test without pausing |
+| `{ type: "run_all" }` | Finish all remaining tests without pausing |
+
+### Files added / modified
+
+| File | Change |
+|------|--------|
+| `tests/debug.ts` | New — live-binding singleton |
+| `tests/DebugServer.ts` | New — socket server, step/continue state machine |
+| `observer.mjs` | New — observer CLI |
+| `tests/helpers.ts` | Added `activeDebugServer?.notifyStep(…)` in `start()` and `keys()`; added `_describeSeq` helper |
+| `runner.mjs` | Added `--debug` flag, `DebugServer` lifecycle, `setContext`/notify calls around each test case |
+| `globals.d.ts` | Added `process.pid`, `node:net`, and `node:fs/promises` type declarations |
+
+---
+
 ## Decisions Deferred / Out of Scope
 
 - Parallel UI test execution is intentionally omitted: running multiple

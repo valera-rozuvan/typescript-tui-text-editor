@@ -12,6 +12,7 @@ declare class Buffer extends Uint8Array {
 declare const process: {
   argv: string[];
   execPath: string;
+  pid: number;
   cwd(): string;
   exit(code?: number): never;
   env: Record<string, string | undefined>;
@@ -85,6 +86,30 @@ declare module 'node:fs' {
   export function mkdirSync(path: string, options?: { recursive?: boolean }): string | undefined;
   export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
   export function mkdtempSync(prefix: string): string;
+}
+
+declare module 'node:fs/promises' {
+  export function unlink(path: string): Promise<void>;
+  export function mkdir(path: string, options?: { recursive?: boolean }): Promise<string | undefined>;
+}
+
+declare module 'node:net' {
+  interface Socket {
+    write(data: string | Buffer): boolean;
+    destroy(): void;
+    on(event: 'data', listener: (data: Buffer) => void): this;
+    on(event: 'close', listener: () => void): this;
+    on(event: 'error', listener: (err: Error) => void): this;
+    on(event: string, listener: (...args: unknown[]) => void): this;
+  }
+  interface Server {
+    listen(path: string, callback?: () => void): this;
+    close(callback?: () => void): this;
+    on(event: 'error', listener: (err: Error) => void): this;
+    on(event: string, listener: (...args: unknown[]) => void): this;
+  }
+  function createServer(connectionListener?: (socket: Socket) => void): Server;
+  export { createServer, Server, Socket };
 }
 
 declare module 'node:assert/strict' {

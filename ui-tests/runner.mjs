@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const skipBuild = args.includes('--no-build');
+const debugMode = args.includes('--debug');
 
 /* ── compile TypeScript ────────────────────────────────────────────────────── */
 if (!skipBuild) {
@@ -28,6 +29,21 @@ if (!skipBuild) {
     console.error(output);
     process.exit(1);
   }
+}
+
+/* ── debug server setup ────────────────────────────────────────────────────── */
+let debugServer = null;
+if (debugMode) {
+  const { DebugServer } = await import('./dist/DebugServer.js');
+  const { setDebugServer } = await import('./dist/debug.js');
+  debugServer = new DebugServer();
+  await debugServer.start();
+  console.log(`\nDebug server: ${debugServer.path}`);
+  console.log(`Attach:  node ui-tests/observer.mjs ${debugServer.path}`);
+  console.log('\nWaiting for observer to connect...');
+  await debugServer.waitForObserver();
+  console.log('Observer connected. Starting tests.\n');
+  setDebugServer(debugServer);
 }
 
 /* ── discover test files ───────────────────────────────────────────────────── */
@@ -72,12 +88,15 @@ for (const testFile of testFiles) {
 
   for (const tc of testCases) {
     const start = Date.now();
+    debugServer?.setContext(suiteName, tc.name);
     try {
       await tc.fn();
       suitePassed++;
+      debugServer?.notifyTestPass(suiteName, tc.name);
     } catch (err) {
       suiteFailed++;
       failures.push({ name: tc.name, error: err.message, ms: Date.now() - start });
+      debugServer?.notifyTestFail(suiteName, tc.name, err.message);
     }
   }
 
@@ -96,4 +115,8 @@ for (const testFile of testFiles) {
 
 const total = totalPassed + totalFailed;
 console.log(`\n${total} tests: ${totalPassed} passed, ${totalFailed} failed\n`);
+
+debugServer?.notifyDone();
+await debugServer?.close();
+
 process.exit(totalFailed > 0 ? 1 : 0);

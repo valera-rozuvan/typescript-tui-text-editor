@@ -26,6 +26,8 @@ ui-tests/
     PtyProcess.ts       TypeScript wrapper around the native addon
     TerminalScreen.ts   Lightweight VT100 parser / virtual screen grid
     helpers.ts          EditorTest class, key constants, temp-file helpers
+    debug.ts            Live-binding singleton for the active DebugServer
+    DebugServer.ts      Unix socket server for the step-through debug protocol
     01_startup.test.ts  Startup and initial render tests
     02_text_input.test.ts  Typing, saving, cursor position tests
     03_multipane.test.ts   Pane splitting and switching tests
@@ -33,6 +35,7 @@ ui-tests/
   globals.d.ts          Node.js built-in type declarations for tsc
   tsconfig.json         TypeScript config (rootDir=tests, outDir=dist)
   runner.mjs            Test runner (compiles + runs all test suites)
+  observer.mjs          Debug observer — attaches to a --debug runner session
   build.sh              One-shot build: node-gyp + tsc
   PLAN.md               Step-by-step design rationale
   README.md             This file
@@ -51,6 +54,9 @@ npm run ui-test
 
 # Skip TypeScript re-compilation (after first run)
 node ui-tests/runner.mjs --no-build
+
+# Run in debug / step-through mode (see Debug mode section below)
+node ui-tests/runner.mjs --debug
 
 # Build the native addon and TypeScript separately
 bash ui-tests/build.sh
@@ -227,3 +233,110 @@ than strict equality.
    - Use `try … finally { t.cleanup(); removeTempDir(dir); }` to guarantee
      cleanup even on failure.
 4. Re-run `node ui-tests/runner.mjs`; the new file is auto-discovered.
+
+---
+
+## Debug mode — step-through observer
+
+When a test fails it is often hard to tell what the virtual screen looked like
+at each step.  The `--debug` flag enables a step-through mode: the runner
+pauses after every `start()` and `keys()` call and waits for a connected
+observer to advance it.  The observer is a second terminal that renders the
+virtual PTY screen in real time.
+
+### Starting a debug session
+
+**Terminal 1 — run the tests in debug mode:**
+
+```bash
+node ui-tests/runner.mjs --debug
+# or, to skip TypeScript recompilation:
+node ui-tests/runner.mjs --debug --no-build
+```
+
+The runner prints the path to a Unix domain socket and waits:
+
+```
+Debug server: /tmp/node-text-editor-ui-debug-12345.sock
+Attach:  node ui-tests/observer.mjs /tmp/node-text-editor-ui-debug-12345.sock
+
+Waiting for observer to connect...
+```
+
+**Terminal 2 — attach the observer** (copy the path from Terminal 1):
+
+```bash
+node ui-tests/observer.mjs /tmp/node-text-editor-ui-debug-12345.sock
+```
+
+Once the observer connects, the runner prints `Observer connected. Starting tests.` and begins executing.
+
+### What the observer shows
+
+After each `start()` or `keys()` call the runner sends the current virtual
+screen state to the observer.  The observer clears its terminal and renders:
+
+```
+Suite:  startup
+Test:   opening a file shows its name in the title bar
+Action: keys(CTRL_S)
+
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  hello.txt                                                                                                  line 1:1     │
+│  greeting                                                                                                                │
+│  ~                                                                                                                       │
+│  …                                                                                                                       │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Cursor: row=1 col=0
+
+[ENTER/n] next step   [r] run to end of test   [a] run all   [q] quit
+```
+
+The cell at the current cursor position is highlighted with reverse video.
+The screen is 120 × 30 characters; the observer terminal should be at least
+124 columns wide to fit the border.
+
+### Observer controls
+
+| Key | Effect |
+|-----|--------|
+| `ENTER` / `Space` / `n` | Advance one step (next `start()` or `keys()` call) |
+| `r` | Run to the end of the current test without pausing |
+| `a` | Run all remaining tests without pausing |
+| `q` / `Ctrl+C` | Disconnect the observer and exit |
+
+If the observer disconnects mid-run the runner automatically switches to
+run-all mode and finishes the remaining tests at full speed.
+
+### Communication protocol
+
+The runner and observer communicate over a Unix domain socket using
+newline-delimited JSON messages.
+
+**Runner → Observer:**
+
+```json
+{ "type": "step",      "suite": "…", "test": "…", "action": "keys(CTRL_S)", "screen": ["…row0…", …], "cursor": { "row": 1, "col": 0 } }
+{ "type": "test_pass", "suite": "…", "test": "…" }
+{ "type": "test_fail", "suite": "…", "test": "…", "error": "…" }
+{ "type": "done" }
+```
+
+**Observer → Runner:**
+
+```json
+{ "type": "next" }
+{ "type": "run" }
+{ "type": "run_all" }
+```
+
+### Implementation files
+
+| File | Role |
+|------|------|
+| `tests/DebugServer.ts` | Creates and manages the Unix socket; handles the step/continue protocol |
+| `tests/debug.ts` | ES module live-binding singleton — the runner sets `activeDebugServer` here before tests load, so `helpers.ts` sees it via the same module instance |
+| `tests/helpers.ts` | `EditorTest.start()` and `.keys()` call `activeDebugServer?.notifyStep(…)` after each PTY interaction |
+| `runner.mjs` | `--debug` flag: creates `DebugServer`, waits for observer, injects singleton, calls `setContext`/`notifyTestPass`/`notifyTestFail`/`notifyDone` around each test |
+| `observer.mjs` | Standalone JS script; connects to socket, renders screen, handles keypresses |
