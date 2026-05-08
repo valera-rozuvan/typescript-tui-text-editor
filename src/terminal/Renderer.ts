@@ -23,6 +23,10 @@ export class Renderer {
   private _ctx: DrawContext;
   // On first render and after resize, emit clearScreen and force full repaint.
   private _needsClear = true;
+  private _cursorVisible = true;
+
+  setCursorVisible(v: boolean): void { this._cursorVisible = v; }
+  getCursorVisible(): boolean { return this._cursorVisible; }
 
   constructor(term: Terminal) {
     this.term = term;
@@ -78,22 +82,15 @@ export class Renderer {
     out += this._diffOutput();
     out += Terminal.reset;
 
-    // Place the real terminal cursor.
-    if (!searchPanel.active) {
-      const activePane = layout.activePane;
-      if (activePane.buffer && !layout.browserFocused) {
-        if (activePane.isCursorVisible()) {
-          out += Terminal.moveTo(activePane.cursorAbsY() + 1, activePane.cursorAbsX() + 1);
-          out += Terminal.showCursor;
-        }
-      }
-    } else {
+    // Position the hardware cursor for the search input; otherwise keep it hidden
+    // (the editor pane uses a software-rendered blinking cursor instead).
+    if (searchPanel.active) {
       const panelW   = Math.min(W - 4, 90);
       const panelX   = Math.floor((W - panelW) / 2);
       const panelY   = Math.floor(H * 0.15);
-      const inputRow = panelY + 2;                              // 0-indexed row of search input
-      const inputCol = panelX + 2 + searchPanel.needle.length; // 0-indexed col after "> " + needle
-      out += Terminal.moveTo(inputRow + 1, inputCol + 1);       // +1: ANSI is 1-indexed
+      const inputRow = panelY + 2;
+      const inputCol = panelX + 2 + searchPanel.needle.length;
+      out += Terminal.moveTo(inputRow + 1, inputCol + 1);
       out += Terminal.showCursor;
     }
 
@@ -271,13 +268,13 @@ export class Renderer {
     let col = scrollCol;
 
     while (col < visEnd) {
-      const isCursor = isActive && isCursorLine && col === cursorCol;
+      const isCursor = isActive && isCursorLine && col === cursorCol && this._cursorVisible;
       const tokType  = typeMap[col] ?? 'normal';
 
       if (isCursor) {
         ctx.reset();
-        ctx.setReverse(true);
-        ctx.setFg(THEME.bg);
+        ctx.setFg(THEME.currentLineBg);
+        ctx.setBg(tokenColor(tokType as never));
         ctx.write(line[col]);
         ctx.reset();
         if (isCursorLine) ctx.setBg(THEME.currentLineBg);
@@ -297,14 +294,14 @@ export class Renderer {
     const remaining = visibleWidth - rendered;
 
     if (remaining > 0) {
-      if (isActive && isCursorLine && cursorCol >= visEnd && cursorCol - scrollCol < visibleWidth) {
+      if (isActive && isCursorLine && cursorCol >= visEnd && cursorCol - scrollCol < visibleWidth && this._cursorVisible) {
         const spacesBeforeCursor = cursorCol - visEnd;
         ctx.reset();
         if (isCursorLine) ctx.setBg(THEME.currentLineBg);
         if (spacesBeforeCursor > 0) ctx.write(' '.repeat(spacesBeforeCursor));
         ctx.reset();
-        ctx.setReverse(true);
-        ctx.setFg(THEME.bg);
+        ctx.setFg(THEME.currentLineBg);
+        ctx.setBg(THEME.fg);
         ctx.write(' ');
         ctx.reset();
         if (isCursorLine) ctx.setBg(THEME.currentLineBg);

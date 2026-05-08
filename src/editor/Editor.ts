@@ -1,4 +1,5 @@
 import { resolve, dirname } from 'path';
+import { CURSOR_BLINK_MS } from '../constants.js';
 import { Terminal } from '../terminal/Terminal.js';
 import { parseKeys } from '../terminal/Input.js';
 import type { KeyEvent } from '../terminal/Input.js';
@@ -24,6 +25,7 @@ export class Editor {
   private mode: EditorMode = 'edit';
   private message = '';
   private messageTimer: ReturnType<typeof setTimeout> | null = null;
+  private _blinkTimer: ReturnType<typeof setInterval> | null = null;
   private running = false;
   private _projectSearchCancel: { cancelled: boolean } | null = null;
 
@@ -120,10 +122,17 @@ export class Editor {
 
     // Initial render
     this.render();
+
+    this._blinkTimer = setInterval(() => {
+      const v = !this.renderer.getCursorVisible();
+      this.renderer.setCursorVisible(v);
+      this.render();
+    }, CURSOR_BLINK_MS);
   }
 
   private quit(): void {
     this.running = false;
+    if (this._blinkTimer) clearInterval(this._blinkTimer);
     this.term.disableRawMode();
     this.term.write(Terminal.showCursor);
     this.term.write(Terminal.clearScreen);
@@ -152,6 +161,7 @@ export class Editor {
   }
 
   private handleKey(ev: KeyEvent): void {
+    this.renderer.setCursorVisible(true);
     switch (this.mode) {
       case 'edit':        this.handleEditKey(ev); break;
       case 'filebrowser': this.handleBrowserKey(ev); break;
