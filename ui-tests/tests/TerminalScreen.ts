@@ -1,3 +1,5 @@
+import { TAB_CHAR_COUNT } from './constants.js';
+
 /*
  * TerminalScreen — lightweight VT100 / ANSI-sequence parser.
  *
@@ -45,7 +47,7 @@ export class TerminalScreen {
         this.cursorRow = Math.min(this.cursorRow + 1, this.rows - 1);
         i++;
       } else if (ch === '\t') {
-        this.cursorCol = Math.min(this.cols - 1, (Math.floor(this.cursorCol / 8) + 1) * 8);
+        this.cursorCol = Math.min(this.cols - 1, (Math.floor(this.cursorCol / TAB_CHAR_COUNT) + 1) * TAB_CHAR_COUNT);
         i++;
       } else if (code >= 0x20) {
         /* Printable character (includes multi-byte Unicode already in JS string) */

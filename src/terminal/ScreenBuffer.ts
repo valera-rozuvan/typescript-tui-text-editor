@@ -1,4 +1,5 @@
 import { THEME } from '../highlight/tokens.js';
+import { TAB_CHAR_COUNT } from '../constants.js';
 
 export type RGB = [number, number, number];
 
@@ -136,7 +137,10 @@ export class DrawContext {
     this._reverse = false;
   }
 
-  /** Write each character of `text` at the current position, advancing col. */
+  /** Write each character of `text` at the current position, advancing col.
+   *  Tab characters are expanded to spaces using TAB_CHAR_COUNT-column tab stops so that
+   *  every screen cell is explicitly written and stale content from previous
+   *  renders is properly overwritten by the diff pass. */
   write(text: string): void {
     const fg = this._fg;
     const bg = this._bg;
@@ -144,8 +148,16 @@ export class DrawContext {
     const dim = this._dim;
     const reverse = this._reverse;
     for (let i = 0; i < text.length; i++) {
-      this._buf.set(this._row, this._col, { char: text[i], fg, bg, bold, dim, reverse });
-      this._col++;
+      if (text[i] === '\t') {
+        const nextStop = (Math.floor(this._col / TAB_CHAR_COUNT) + 1) * TAB_CHAR_COUNT;
+        for (let c = this._col; c < nextStop; c++) {
+          this._buf.set(this._row, c, { char: ' ', fg, bg, bold, dim, reverse });
+        }
+        this._col = nextStop;
+      } else {
+        this._buf.set(this._row, this._col, { char: text[i], fg, bg, bold, dim, reverse });
+        this._col++;
+      }
     }
   }
 }
