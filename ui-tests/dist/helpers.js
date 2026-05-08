@@ -63,16 +63,18 @@ export function removeTempDir(dir) {
 export class EditorTest {
     cols;
     rows;
+    cwd;
     screen;
     pty = null;
-    constructor(cols = 120, rows = 30) {
+    constructor(cols = 120, rows = 30, cwd) {
         this.cols = cols;
         this.rows = rows;
+        this.cwd = cwd;
         this.screen = new TerminalScreen(cols, rows);
     }
     /* Start the editor, wait for the first full render. */
     async start(fileArgs = [], idleMs = 300) {
-        this.pty = new PtyProcess(NODE_EXEC, [EDITOR_PATH, ...fileArgs], this.cols, this.rows);
+        this.pty = new PtyProcess(NODE_EXEC, [EDITOR_PATH, ...fileArgs], this.cols, this.rows, this.cwd);
         const output = await this.pty.readOutput(idleMs, 8000);
         this.screen.feed(output);
     }

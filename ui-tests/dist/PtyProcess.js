@@ -13,10 +13,10 @@ export class PtyProcess {
     _closed = false;
     cols;
     rows;
-    constructor(execPath, args = [], cols = 120, rows = 30) {
+    constructor(execPath, args = [], cols = 120, rows = 30, cwd) {
         this.cols = cols;
         this.rows = rows;
-        const result = native.spawn(execPath, args, cols, rows);
+        const result = native.spawn(execPath, args, cols, rows, cwd);
         this.fd = result.fd;
         this.pid = result.pid;
     }

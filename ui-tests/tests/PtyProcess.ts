@@ -6,7 +6,7 @@ const _require = createRequire(import.meta.url);
 const _dirname = dirname(fileURLToPath(import.meta.url));
 
 interface PtyNative {
-  spawn(execPath: string, args: string[], cols: number, rows: number): { fd: number; pid: number };
+  spawn(execPath: string, args: string[], cols: number, rows: number, cwd?: string): { fd: number; pid: number };
   write(fd: number, data: Buffer): void;
   read(fd: number): Buffer | null;
   resize(fd: number, cols: number, rows: number): void;
@@ -31,10 +31,10 @@ export class PtyProcess {
   readonly cols: number;
   readonly rows: number;
 
-  constructor(execPath: string, args: string[] = [], cols = 120, rows = 30) {
+  constructor(execPath: string, args: string[] = [], cols = 120, rows = 30, cwd?: string) {
     this.cols = cols;
     this.rows = rows;
-    const result = native.spawn(execPath, args, cols, rows);
+    const result = native.spawn(execPath, args, cols, rows, cwd);
     this.fd = result.fd;
     this.pid = result.pid;
   }

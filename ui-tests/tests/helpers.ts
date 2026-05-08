@@ -75,14 +75,15 @@ export class EditorTest {
 
   constructor(
     private readonly cols = 120,
-    private readonly rows = 30
+    private readonly rows = 30,
+    private readonly cwd?: string,
   ) {
     this.screen = new TerminalScreen(cols, rows);
   }
 
   /* Start the editor, wait for the first full render. */
   async start(fileArgs: string[] = [], idleMs = 300): Promise<void> {
-    this.pty = new PtyProcess(NODE_EXEC, [EDITOR_PATH, ...fileArgs], this.cols, this.rows);
+    this.pty = new PtyProcess(NODE_EXEC, [EDITOR_PATH, ...fileArgs], this.cols, this.rows, this.cwd);
     const output = await this.pty.readOutput(idleMs, 8000);
     this.screen.feed(output);
   }

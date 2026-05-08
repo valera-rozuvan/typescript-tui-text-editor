@@ -57,8 +57,8 @@ static napi_value undef(napi_env env)
 
 static napi_value pty_spawn(napi_env env, napi_callback_info info)
 {
-    size_t argc = 4;
-    napi_value argv[4];
+    size_t argc = 5;
+    napi_value argv[5];
     napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
     if (argc < 4) { napi_throw_error(env, NULL, "spawn: 4 args required"); return NULL; }
 
@@ -95,6 +95,22 @@ static napi_value pty_spawn(napi_env env, napi_callback_info info)
     napi_get_value_int32(env, argv[2], &cols);
     napi_get_value_int32(env, argv[3], &rows);
 
+    /* optional working directory (argv[4]) */
+    char *child_cwd = NULL;
+    if (argc >= 5) {
+        napi_valuetype vtype;
+        napi_typeof(env, argv[4], &vtype);
+        if (vtype == napi_string) {
+            size_t cwd_len = 0;
+            napi_get_value_string_utf8(env, argv[4], NULL, 0, &cwd_len);
+            if (cwd_len > 0) {
+                child_cwd = malloc(cwd_len + 1);
+                if (child_cwd)
+                    napi_get_value_string_utf8(env, argv[4], child_cwd, cwd_len + 1, NULL);
+            }
+        }
+    }
+
     struct winsize ws;
     memset(&ws, 0, sizeof(ws));
     ws.ws_col = (unsigned short)cols;
@@ -105,11 +121,13 @@ static napi_value pty_spawn(napi_env env, napi_callback_info info)
     if (pid < 0) {
         for (uint32_t i = 0; i <= nargs; i++) free(child_argv[i]);
         free(child_argv);
+        free(child_cwd);
         return throw_errno(env, "forkpty");
     }
 
     if (pid == 0) {
         /* child process */
+        if (child_cwd) chdir(child_cwd);
         setenv("TERM", "xterm-256color", 1);
         setenv("COLORTERM", "truecolor", 1);
         execv(exec_path, child_argv);
@@ -120,6 +138,7 @@ static napi_value pty_spawn(napi_env env, napi_callback_info info)
     /* parent — strings were copied by fork; free our copies */
     for (uint32_t i = 0; i <= nargs; i++) free(child_argv[i]);
     free(child_argv);
+    free(child_cwd);
 
     /* make master fd non-blocking so read() returns EAGAIN when no data */
     int flags = fcntl(master_fd, F_GETFL, 0);
