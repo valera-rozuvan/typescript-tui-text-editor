@@ -9,6 +9,9 @@
     "test": "tsc -p unit-tests/tsconfig.json && node unit-tests/runner.mjs",
     "test:parallel": "tsc -p unit-tests/tsconfig.json && node unit-tests/runner.mjs --parallel",
     "ui-test": "node ui-tests/runner.mjs",
+    "ui-test:debug": "node ui-tests/runner.mjs --debug",
+    "ui-test:suite": "node ui-tests/runner.mjs --suite",
+    "ui-test:suite:debug": "node ui-tests/runner.mjs --debug --suite",
     "ui-test:build": "bash ui-tests/build.sh",
     "make-exec": "bash scripts/make-exec.sh"
   },

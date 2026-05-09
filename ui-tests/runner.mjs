@@ -3,8 +3,15 @@
  * ui-tests/runner.mjs — orchestrator for the end-to-end UI test suite.
  *
  * Usage:
- *   node ui-tests/runner.mjs            # compile + run
- *   node ui-tests/runner.mjs --no-build # skip TypeScript compilation
+ *   node ui-tests/runner.mjs                        # compile + run all suites
+ *   node ui-tests/runner.mjs --no-build             # skip TypeScript compilation
+ *   node ui-tests/runner.mjs --suite <name>         # run a specific suite
+ *   node ui-tests/runner.mjs --debug                # debug all suites
+ *   node ui-tests/runner.mjs --debug --suite <name> # debug a specific suite
+ *
+ * Suite names: startup, text_input, multipane, file_search, project_search,
+ *              search_cursor, scroll_rendering, scroll_rendering_c_code,
+ *              readonly_file, file_browser, js_transform
  */
 
 import { execSync } from 'node:child_process';
@@ -16,6 +23,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const skipBuild = args.includes('--no-build');
 const debugMode = args.includes('--debug');
+
+const suiteFilterIdx = args.indexOf('--suite');
+const suiteFilter = suiteFilterIdx !== -1 ? (args[suiteFilterIdx + 1] ?? null) : null;
 
 /* ── compile TypeScript ────────────────────────────────────────────────────── */
 if (!skipBuild) {
@@ -59,7 +69,11 @@ if (testFiles.length === 0) {
   process.exit(0);
 }
 
-console.log(`\nRunning ${testFiles.length} UI test suite(s) — sequential\n`);
+if (suiteFilter) {
+  console.log(`\nRunning UI test suite: ${suiteFilter}\n`);
+} else {
+  console.log(`\nRunning ${testFiles.length} UI test suite(s) — sequential\n`);
+}
 
 /* ── run suites ────────────────────────────────────────────────────────────── */
 let totalPassed = 0;
@@ -80,6 +94,9 @@ for (const testFile of testFiles) {
   const suiteName = String(mod.suite ?? testFile)
     .replace(/.*\/dist\//, '')
     .replace('.test.js', '');
+
+  if (suiteFilter && suiteName !== suiteFilter) continue;
+
   const testCases = Array.isArray(mod.tests) ? mod.tests : [];
 
   let suitePassed = 0;
@@ -111,6 +128,16 @@ for (const testFile of testFiles) {
 
   totalPassed += suitePassed;
   totalFailed += suiteFailed;
+}
+
+if (suiteFilter && totalPassed === 0 && totalFailed === 0) {
+  console.error(`No suite named "${suiteFilter}" found.`);
+  console.error('Available suites: startup, text_input, multipane, file_search, project_search,');
+  console.error('                  search_cursor, scroll_rendering, scroll_rendering_c_code,');
+  console.error('                  readonly_file, file_browser, js_transform');
+  debugServer?.notifyDone();
+  await debugServer?.close();
+  process.exit(1);
 }
 
 const total = totalPassed + totalFailed;
