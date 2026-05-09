@@ -32,6 +32,8 @@ export const KEY = {
   ALT_2:      '\x1b2',  /* hsplit2 layout */
   ALT_3:      '\x1b3',  /* vsplit2 layout */
   ALT_4:      '\x1b4',  /* quad layout */
+  ALT_J:      '\x1bj',  /* open / run JS transform modal */
+  ALT_C:      '\x1bc',  /* cancel JS transform modal */
   ALT_RIGHT:  '\x1b[1;3C', /* next buffer in pane */
   ALT_LEFT:   '\x1b[1;3D', /* prev buffer in pane */
   ARROW_UP:   '\x1b[A',

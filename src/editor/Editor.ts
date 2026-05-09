@@ -8,6 +8,7 @@ import { Buffer } from './Buffer.js';
 import { Layout } from '../ui/Layout.js';
 import { FileBrowser } from '../ui/FileBrowser.js';
 import { SearchPanel } from '../ui/SearchPanel.js';
+import { JsTransformPanel } from '../ui/JsTransformPanel.js';
 import { Highlighter } from '../highlight/Highlighter.js';
 import type { EditorMode } from '../ui/StatusBar.js';
 import { searchInBuffers } from '../search/FileSearch.js';
@@ -20,6 +21,7 @@ export class Editor {
   private layout = new Layout();
   private fileBrowser: FileBrowser;
   private searchPanel = new SearchPanel();
+  private jsTransformPanel = new JsTransformPanel();
   private highlighter = new Highlighter();
   private renderer: Renderer;
   private mode: EditorMode = 'edit';
@@ -154,6 +156,7 @@ export class Editor {
       this.layout,
       this.fileBrowser,
       this.searchPanel,
+      this.jsTransformPanel,
       this.highlighter,
       this.mode,
       this.message
@@ -163,9 +166,10 @@ export class Editor {
   private handleKey(ev: KeyEvent): void {
     this.renderer.setCursorVisible(true);
     switch (this.mode) {
-      case 'edit':        this.handleEditKey(ev); break;
-      case 'filebrowser': this.handleBrowserKey(ev); break;
-      case 'search':      this.handleSearchKey(ev); break;
+      case 'edit':         this.handleEditKey(ev); break;
+      case 'filebrowser':  this.handleBrowserKey(ev); break;
+      case 'search':       this.handleSearchKey(ev); break;
+      case 'jstransform':  this.handleJsTransformKey(ev); break;
     }
     this.render();
   }
@@ -244,6 +248,10 @@ export class Editor {
         case '2': this.layout.setMode('hsplit2'); return;
         case '3': this.layout.setMode('vsplit2'); return;
         case '4': this.layout.setMode('quad'); return;
+        case 'j':
+          this.jsTransformPanel.open();
+          this.mode = 'jstransform';
+          return;
       }
       return; // ignore other alt combos
     }
@@ -535,6 +543,69 @@ export class Editor {
         targetPane.centerOnCursor();
         this.render();
       }).catch(() => {});
+    }
+  }
+
+  private handleJsTransformKey(ev: KeyEvent): void {
+    const { key, alt, ctrl, char } = ev;
+
+    if (alt && key === 'c') {
+      this.jsTransformPanel.close();
+      this.mode = 'edit';
+      return;
+    }
+
+    if (alt && key === 'j') {
+      this._executeJsTransform();
+      this.jsTransformPanel.close();
+      this.mode = 'edit';
+      return;
+    }
+
+    switch (key) {
+      case 'up':        this.jsTransformPanel.moveUp(); break;
+      case 'down':      this.jsTransformPanel.moveDown(); break;
+      case 'left':      this.jsTransformPanel.moveLeft(); break;
+      case 'right':     this.jsTransformPanel.moveRight(); break;
+      case 'home':      this.jsTransformPanel.moveHome(); break;
+      case 'end':       this.jsTransformPanel.moveEnd(); break;
+      case 'enter':     this.jsTransformPanel.insertNewline(); break;
+      case 'backspace': this.jsTransformPanel.deleteCharBefore(); break;
+      case 'tab':       this.jsTransformPanel.insertChar('  '); break;
+      default:
+        if (char && char.length > 0 && !ctrl) {
+          this.jsTransformPanel.insertChar(char);
+        }
+        break;
+    }
+  }
+
+  private _executeJsTransform(): void {
+    const buf = this.layout.activePane.buffer;
+    if (!buf) return;
+
+    const code = this.jsTransformPanel.getCode();
+    try {
+      // Build a wrapper that defines the user's code then calls transform(line).
+      const fn = new Function('line', 'lineNumber', `${code}\nreturn transform(line, lineNumber);`) as (line: string, lineNumber: number) => unknown;
+      const newLines = buf.lines.flatMap((line, index) => {
+        try {
+          const result = fn(line, index);
+          return typeof result === 'string' ? [result] : [];
+        } catch {
+          return [line];
+        }
+      });
+      if (newLines.length === 0) newLines.push('');
+      buf.lines = newLines;
+      buf.modified = true;
+      this.highlighter.invalidateFrom(0, buf);
+      const pane = this.layout.activePane;
+      pane.cursor.setPos(Math.min(pane.cursor.line, buf.lineCount - 1), 0);
+      this.showMessage('JS transform applied');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.showMessage(`JS error: ${msg}`);
     }
   }
 

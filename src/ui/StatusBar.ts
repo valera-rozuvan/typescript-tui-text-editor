@@ -4,7 +4,7 @@ import type { Highlighter } from '../highlight/Highlighter.js';
 import { THEME } from '../highlight/tokens.js';
 import type { DrawContext } from '../terminal/ScreenBuffer.js';
 
-export type EditorMode = 'edit' | 'filebrowser' | 'search';
+export type EditorMode = 'edit' | 'filebrowser' | 'search' | 'jstransform';
 
 export function renderStatusBar(
   ctx: DrawContext,
@@ -26,8 +26,9 @@ export function renderStatusBar(
     return;
   }
 
-  const modeStr = mode === 'filebrowser' ? ' BROWSE ' :
-                  mode === 'search'      ? ' SEARCH ' : ' EDIT   ';
+  const modeStr = mode === 'filebrowser'  ? ' BROWSE ' :
+                  mode === 'search'       ? ' SEARCH ' :
+                  mode === 'jstransform'  ? '   JS   ' : ' EDIT   ';
 
   if (mode === 'filebrowser') {
     const left = `${modeStr}  ${fileBrowser.currentDir}`;

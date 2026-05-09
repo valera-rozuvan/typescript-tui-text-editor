@@ -5,6 +5,7 @@ import type { Layout } from '../ui/Layout.js';
 import type { Pane } from '../ui/Pane.js';
 import type { FileBrowser } from '../ui/FileBrowser.js';
 import type { SearchPanel } from '../ui/SearchPanel.js';
+import type { JsTransformPanel } from '../ui/JsTransformPanel.js';
 import type { Highlighter } from '../highlight/Highlighter.js';
 import type { EditorMode } from '../ui/StatusBar.js';
 import { renderStatusBar } from '../ui/StatusBar.js';
@@ -39,6 +40,7 @@ export class Renderer {
     layout: Layout,
     fileBrowser: FileBrowser,
     searchPanel: SearchPanel,
+    jsTransformPanel: JsTransformPanel,
     highlighter: Highlighter,
     mode: EditorMode,
     message: string
@@ -60,7 +62,7 @@ export class Renderer {
 
     // Render all components into _next.
     for (let i = 0; i < layout.panes.length; i++) {
-      const isActive = i === layout.activePaneIndex && !layout.browserFocused && !searchPanel.active;
+      const isActive = i === layout.activePaneIndex && !layout.browserFocused && !searchPanel.active && !jsTransformPanel.active;
       this._renderPane(layout.panes[i], isActive, highlighter);
     }
     this._renderSeparators(layout);
@@ -69,6 +71,9 @@ export class Renderer {
     }
     if (searchPanel.active) {
       this._renderSearchPanel(searchPanel, W, H);
+    }
+    if (jsTransformPanel.active) {
+      this._renderJsTransformPanel(jsTransformPanel, W, H);
     }
     renderStatusBar(this._ctx, layout, mode, highlighter, fileBrowser, message, W, H);
 
@@ -82,7 +87,7 @@ export class Renderer {
     out += this._diffOutput();
     out += Terminal.reset;
 
-    // Position the hardware cursor for the search input; otherwise keep it hidden
+    // Position the hardware cursor inside the active modal; otherwise keep it hidden
     // (the editor pane uses a software-rendered blinking cursor instead).
     if (searchPanel.active) {
       const panelW   = Math.min(W - 4, 90);
@@ -91,6 +96,18 @@ export class Renderer {
       const inputRow = panelY + 2;
       const inputCol = panelX + 2 + searchPanel.needle.length;
       out += Terminal.moveTo(inputRow + 1, inputCol + 1);
+      out += Terminal.showCursor;
+    } else if (jsTransformPanel.active) {
+      const panelW    = Math.min(W - 4, 90);
+      const panelX    = Math.floor((W - panelW) / 2);
+      const panelY    = Math.floor(H * 0.1);
+      const panelH    = Math.min(Math.floor(H * 0.8), 35);
+      const codeH     = panelH - 4; // rows 0=title, 1=sep, 2..panelH-3=code, panelH-2=sep, panelH-1=footer
+      jsTransformPanel.adjustScroll(codeH);
+      const visRow    = jsTransformPanel.cursorLine - jsTransformPanel.scrollLine;
+      const cursorRow = panelY + 2 + visRow;
+      const cursorCol = panelX + 1 + jsTransformPanel.cursorCol;
+      out += Terminal.moveTo(cursorRow + 1, cursorCol + 1);
       out += Terminal.showCursor;
     }
 
@@ -482,6 +499,76 @@ export class Renderer {
       ? ` ${sp.results.length} result${sp.results.length === 1 ? '' : 's'}`
       : sp.needle ? '  No results' : '  Type to search';
     ctx.write(fitStr(countStr, panelW));
+    ctx.reset();
+  }
+
+  // ── JS transform panel rendering ─────────────────────────────────────────
+
+  private _renderJsTransformPanel(jp: JsTransformPanel, W: number, H: number): void {
+    const ctx = this._ctx;
+
+    const panelH = Math.min(Math.floor(H * 0.8), 35);
+    const panelW = Math.min(W - 4, 90);
+    const panelX = Math.floor((W - panelW) / 2);
+    const panelY = Math.floor(H * 0.1);
+
+    // Background fill
+    ctx.setBg(THEME.surface0);
+    ctx.setFg(THEME.fg);
+    for (let row = 0; row < panelH; row++) {
+      ctx.moveTo(panelY + row, panelX);
+      ctx.write(' '.repeat(panelW));
+    }
+
+    // Title row
+    ctx.moveTo(panelY, panelX);
+    ctx.setBg(THEME.surface1);
+    ctx.setFg(THEME.blue);
+    ctx.setBold(true);
+    ctx.write(fitStr(' JS Transform', panelW));
+    ctx.reset();
+
+    // Separator below title
+    ctx.moveTo(panelY + 1, panelX);
+    ctx.setFg(THEME.borderInactive);
+    ctx.setBg(THEME.surface0);
+    ctx.write('─'.repeat(panelW));
+    ctx.reset();
+
+    // Code area: rows panelY+2 .. panelY+panelH-3
+    const codeH = panelH - 4;
+    jp.adjustScroll(codeH);
+
+    for (let row = 0; row < codeH; row++) {
+      const lineIdx  = jp.scrollLine + row;
+      const screenRow = panelY + 2 + row;
+      ctx.moveTo(screenRow, panelX);
+
+      const isCursorLine = lineIdx === jp.cursorLine;
+      ctx.setBg(isCursorLine ? THEME.currentLineBg : THEME.surface0);
+      ctx.setFg(THEME.fg);
+
+      if (lineIdx < jp.lines.length) {
+        // 1-space left padding + code
+        ctx.write(fitStr(' ' + jp.lines[lineIdx], panelW));
+      } else {
+        ctx.write(' '.repeat(panelW));
+      }
+      ctx.reset();
+    }
+
+    // Separator above footer
+    ctx.moveTo(panelY + panelH - 2, panelX);
+    ctx.setFg(THEME.borderInactive);
+    ctx.setBg(THEME.surface0);
+    ctx.write('─'.repeat(panelW));
+    ctx.reset();
+
+    // Footer hint
+    ctx.moveTo(panelY + panelH - 1, panelX);
+    ctx.setBg(THEME.surface1);
+    ctx.setFg(THEME.overlay);
+    ctx.write(fitStr('  Alt+J: Run & Close    Alt+C: Cancel', panelW));
     ctx.reset();
   }
 }

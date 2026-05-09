@@ -4,6 +4,7 @@ import { Renderer } from '../../dist/terminal/Renderer.js';
 import { Layout } from '../../dist/ui/Layout.js';
 import { FileBrowser } from '../../dist/ui/FileBrowser.js';
 import { SearchPanel } from '../../dist/ui/SearchPanel.js';
+import { JsTransformPanel } from '../../dist/ui/JsTransformPanel.js';
 import { Highlighter } from '../../dist/highlight/Highlighter.js';
 import type { TestCase } from './types.js';
 
@@ -23,7 +24,7 @@ function captureRender(
   const orig = stdout.write.bind(process.stdout);
   stdout.write = (s: unknown) => { chunks.push(s as string); return true; };
   try {
-    renderer.render(layout, fb, sp, hl, 'search', '');
+    renderer.render(layout, fb, sp, new JsTransformPanel(), hl, 'search', '');
   } finally {
     stdout.write = orig;
   }
