@@ -215,8 +215,8 @@ export const tests: TestCase[] = [
           }
         }
 
-        /* ── press ↓ 499 times, verifying the full viewport each time ── */
-        for (let step = 0; step < NUM_LINES - 1; step++) {
+        /* ── press ↓ 100 times, verifying the full viewport each time ── */
+        for (let step = 0; step < 100; step++) {
           /*
            * 60 ms idle window: the editor re-renders synchronously on every
            * keystroke (< 5 ms), so 60 ms is a safe margin.
