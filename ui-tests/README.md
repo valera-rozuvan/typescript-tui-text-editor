@@ -28,9 +28,18 @@ ui-tests/
     helpers.ts          EditorTest class, key constants, temp-file helpers
     debug.ts            Live-binding singleton for the active DebugServer
     DebugServer.ts      Unix socket server for the step-through debug protocol
-    01_startup.test.ts  Startup and initial render tests
-    02_text_input.test.ts  Typing, saving, cursor position tests
-    03_multipane.test.ts   Pane splitting and switching tests
+    01_startup.test.ts               Startup and initial render tests
+    02_text_input.test.ts            Typing, saving, cursor position tests
+    03_multipane.test.ts             Pane splitting and switching tests
+    04_file_search.test.ts           In-file fuzzy search tests
+    05_project_search.test.ts        Project-wide search tests
+    06_search_cursor.test.ts         Search panel cursor tracking tests
+    07_scroll_rendering.test.ts      Scroll and re-render tests
+    08_scroll_rendering-c-code.test.ts  Scroll rendering with C syntax highlighting
+    09_readonly_file.test.ts         Read-only file indicator tests
+    10_file_browser.test.ts          File browser navigation tests
+    11_js_transform.test.ts          JS transform modal tests
+    12_tab_navigation.test.ts        Tab character rendering and cursor movement tests
   dist/                 TypeScript compiler output (git-ignored)
   globals.d.ts          Node.js built-in type declarations for tsc
   tsconfig.json         TypeScript config (rootDir=tests, outDir=dist)

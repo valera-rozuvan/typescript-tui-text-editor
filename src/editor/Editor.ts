@@ -343,9 +343,8 @@ export class Editor {
       case 'tab':
         if (buf) {
           const { line, col } = pane.cursor;
-          const spaces = '  '; // 2-space indent
-          buf.insert(line, col, spaces);
-          pane.cursor.setPos(line, col + spaces.length);
+          buf.insert(line, col, '\t');
+          pane.cursor.setPos(line, col + 1);
           this.highlighter.invalidateFrom(line, buf);
           pane.scrollToCursor();
         }

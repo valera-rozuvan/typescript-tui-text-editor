@@ -11,7 +11,7 @@
  *
  * Suite names: startup, text_input, multipane, file_search, project_search,
  *              search_cursor, scroll_rendering, scroll_rendering_c_code,
- *              readonly_file, file_browser, js_transform
+ *              readonly_file, file_browser, js_transform, tab_navigation
  */
 
 import { execSync } from 'node:child_process';
