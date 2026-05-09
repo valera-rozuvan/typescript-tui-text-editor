@@ -27,6 +27,7 @@ export const KEY = {
   ESCAPE:     '\x1b',
   ENTER:      '\x0d',
   BACKSPACE:  '\x7f',
+  TAB:        '\x09', /* Switch focus in file browser */
   ALT_1:      '\x1b1',
   ALT_2:      '\x1b2',  /* hsplit2 layout */
   ALT_3:      '\x1b3',  /* vsplit2 layout */
@@ -146,6 +147,15 @@ export class EditorTest {
 
   assertStatusContains(text: string, message?: string): void {
     this.assertLineContains(this.rows - 1, text, message);
+  }
+
+  assertStatusNotContains(text: string, message?: string): void {
+    const line = this.screen.getLine(this.rows - 1);
+    if (line.includes(text)) {
+      throw new Error(
+        message ?? `Status bar should NOT contain ${JSON.stringify(text)}\n  Status: ${JSON.stringify(line.trimEnd())}`
+      );
+    }
   }
 
   /*

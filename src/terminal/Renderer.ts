@@ -70,7 +70,7 @@ export class Renderer {
     if (searchPanel.active) {
       this._renderSearchPanel(searchPanel, W, H);
     }
-    renderStatusBar(this._ctx, layout, mode, highlighter, message, W, H);
+    renderStatusBar(this._ctx, layout, mode, highlighter, fileBrowser, message, W, H);
 
     // Build the output: diff _current vs _next, emit only changed cells.
     let out = Terminal.hideCursor;

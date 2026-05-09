@@ -1,4 +1,5 @@
 import type { Layout } from './Layout.js';
+import type { FileBrowser } from './FileBrowser.js';
 import type { Highlighter } from '../highlight/Highlighter.js';
 import { THEME } from '../highlight/tokens.js';
 import type { DrawContext } from '../terminal/ScreenBuffer.js';
@@ -10,6 +11,7 @@ export function renderStatusBar(
   layout: Layout,
   mode: EditorMode,
   highlighter: Highlighter,
+  fileBrowser: FileBrowser,
   message: string,
   termWidth: number,
   termHeight: number
@@ -24,11 +26,20 @@ export function renderStatusBar(
     return;
   }
 
-  const pane = layout.panes[layout.activePaneIndex];
-  const buf = pane?.buffer;
-
   const modeStr = mode === 'filebrowser' ? ' BROWSE ' :
                   mode === 'search'      ? ' SEARCH ' : ' EDIT   ';
+
+  if (mode === 'filebrowser') {
+    const left = `${modeStr}  ${fileBrowser.currentDir}`;
+    const line = left.slice(0, termWidth).padEnd(termWidth);
+    ctx.setBold(true);
+    ctx.write(line);
+    ctx.reset();
+    return;
+  }
+
+  const pane = layout.panes[layout.activePaneIndex];
+  const buf = pane?.buffer;
 
   const fileName = buf ? (buf.filePath ?? '[No Name]') : '[No File]';
   const modifiedTag = buf?.modified ? ' MODIFIED' : '';
