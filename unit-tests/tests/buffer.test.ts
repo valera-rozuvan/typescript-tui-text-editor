@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { writeFile, readFile, mkdtemp, rm } from 'node:fs/promises';
+import { writeFile, readFile, mkdtemp, rm, chmod } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { Buffer } from '../../dist/editor/Buffer.js';
@@ -15,6 +15,7 @@ export const tests: TestCase[] = [
       assert.deepEqual(b.lines, ['']);
       assert.equal(b.lineCount, 1);
       assert.equal(b.modified, false);
+      assert.equal(b.readOnly, false);
     },
   },
   {
@@ -221,7 +222,25 @@ export const tests: TestCase[] = [
         assert.equal(b.getLine(2), 'line3');
         assert.equal(b.filePath, path);
         assert.equal(b.modified, false);
+        assert.equal(b.readOnly, false);
       } finally {
+        await rm(dir, { recursive: true });
+      }
+    },
+  },
+  {
+    name: 'fromFile: sets readOnly = true for a non-writable file',
+    fn: async () => {
+      const dir  = await mkdtemp(join(tmpdir(), 'buf-ro-'));
+      const path = join(dir, 'ro.txt');
+      await writeFile(path, 'data\n', 'utf8');
+      await chmod(path, 0o444);
+      try {
+        const b = await Buffer.fromFile(path);
+        assert.equal(b.readOnly, true);
+        assert.equal(b.modified, false);
+      } finally {
+        await chmod(path, 0o644);
         await rm(dir, { recursive: true });
       }
     },
@@ -232,6 +251,7 @@ export const tests: TestCase[] = [
       const b = await Buffer.fromFile('/tmp/__no_such_file_xyz_123.txt');
       assert.equal(b.lineCount, 1);
       assert.equal(b.getLine(0), '');
+      assert.equal(b.readOnly, false);
     },
   },
   {

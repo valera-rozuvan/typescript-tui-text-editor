@@ -37,6 +37,7 @@ declare module 'node:fs/promises' {
   export function mkdir(path: string, options: { recursive: boolean }): Promise<string | undefined>;
   export function mkdtemp(prefix: string): Promise<string>;
   export function rm(path: string, options?: { recursive?: boolean; force?: boolean }): Promise<void>;
+  export function chmod(path: string, mode: number): Promise<void>;
 }
 
 declare module 'node:fs' {

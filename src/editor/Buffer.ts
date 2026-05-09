@@ -1,10 +1,11 @@
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir, access } from 'fs/promises';
 import { basename, dirname } from 'path';
 
 export class Buffer {
   lines: string[];
   filePath: string | null = null;
   modified = false;
+  readOnly = false;
 
   constructor(content = '') {
     this.lines = content === '' ? [''] : content.split('\n');
@@ -13,6 +14,7 @@ export class Buffer {
   static async fromFile(filePath: string): Promise<Buffer> {
     const buf = new Buffer();
     buf.filePath = filePath;
+    let fileExists = true;
     try {
       const content = await readFile(filePath, 'utf8');
       const lines = content.split('\n');
@@ -24,6 +26,14 @@ export class Buffer {
     } catch (e: unknown) {
       if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
       buf.lines = [''];
+      fileExists = false;
+    }
+    if (fileExists) {
+      try {
+        await access(filePath, 2 /* W_OK */);
+      } catch {
+        buf.readOnly = true;
+      }
     }
     return buf;
   }

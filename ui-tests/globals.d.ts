@@ -86,6 +86,7 @@ declare module 'node:fs' {
   export function mkdirSync(path: string, options?: { recursive?: boolean }): string | undefined;
   export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
   export function mkdtempSync(prefix: string): string;
+  export function chmodSync(path: string, mode: number): void;
 }
 
 declare module 'node:fs/promises' {

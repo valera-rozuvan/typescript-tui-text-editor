@@ -31,7 +31,8 @@ export function renderStatusBar(
                   mode === 'search'      ? ' SEARCH ' : ' EDIT   ';
 
   const fileName = buf ? (buf.filePath ?? '[No Name]') : '[No File]';
-  const modified = buf?.modified ? ' ●' : '';
+  const modifiedTag = buf?.modified ? ' MODIFIED' : '';
+  const readonlyTag = buf?.readOnly ? ' READONLY' : '';
   const langName = buf ? highlighter.languageName(buf) : '';
 
   let position = '';
@@ -41,7 +42,7 @@ export function renderStatusBar(
     position = `${ln}:${col}`;
   }
 
-  const left = `${modeStr}  ${fileName}${modified}`;
+  const left = `${modeStr}  ${fileName}${modifiedTag}${readonlyTag}`;
   const right = `${langName}  ${position} `;
 
   const mid = termWidth - left.length - right.length;
