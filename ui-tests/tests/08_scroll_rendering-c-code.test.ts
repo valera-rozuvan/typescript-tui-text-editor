@@ -7,7 +7,7 @@
  * the visible viewport:
  *   1. The status bar reports the correct line number.
  *   2. The content area of every visible row starts with the expected text
- *      (tabs expanded to spaces using TAB_CHAR_COUNT-column terminal tab stops).
+ *      (tabs expanded to exactly TAB_CHAR_COUNT spaces each — fixed-width).
  *   3. The space after each line's text is clean — no stray characters left
  *      over from a previously-rendered longer line on that row.
  *
@@ -59,32 +59,20 @@ const FIXTURE_CONTENT = readFileSync(
 /*
  * Convert a source line to its visual representation in the content area.
  *
- * The editor writes each character — including '\t' — to its own ScreenBuffer
- * cell and emits it directly to the terminal.  The terminal (and our
- * TerminalScreen parser) handle '\t' by advancing the cursor to the next
- * TAB_CHAR_COUNT-column tab stop without writing any character to the intervening cells.
- * Because the diff renderer emits consecutive cells without injecting a
- * moveTo between them, that shift propagates: every character after a tab
- * lands at a terminal column offset by (tabStop - tabSrcCol - 1) relative to
- * its ScreenBuffer cell index.
- *
- * `toVisual` mirrors this: it walks the source line, treating '\t' as
- * "advance to the next multiple of TAB_CHAR_COUNT from the current terminal column" and
- * fills the gap with spaces, while normal characters advance by one column.
+ * `toVisual` mirrors the editor's fixed-width tab expansion: each '\t' always
+ * expands to exactly TAB_CHAR_COUNT spaces, regardless of the current column
+ * position.  Normal characters advance by one column.
  * `startCol` is the terminal column at which the content area begins
- * (= GUTTER_WIDTH = 5 for a 2003-line file).
+ * (= GUTTER_WIDTH = 5 for a 2003-line file); it is unused for tab width but
+ * kept for API consistency.
  */
-function toVisual(line: string, startCol: number): string {
+function toVisual(line: string, _startCol: number): string {
   let result = '';
-  let col    = startCol;
   for (const ch of line) {
     if (ch === '\t') {
-      const next = (Math.floor(col / TAB_CHAR_COUNT) + 1) * TAB_CHAR_COUNT;
-      result += ' '.repeat(next - col);
-      col = next;
+      result += ' '.repeat(TAB_CHAR_COUNT);
     } else {
       result += ch;
-      col++;
     }
   }
   return result;

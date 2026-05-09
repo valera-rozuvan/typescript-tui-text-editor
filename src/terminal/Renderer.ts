@@ -577,17 +577,13 @@ export class Renderer {
 
 /** Expand tab characters in `text` to spaces using TAB_CHAR_COUNT-column stops,
  *  starting from the given absolute screen column `startCol`. */
-function expandTabsFromCol(text: string, startCol: number): string {
+function expandTabsFromCol(text: string, _startCol: number): string {
   let out = '';
-  let col = startCol;
   for (const ch of text) {
     if (ch === '\t') {
-      const spaces = TAB_CHAR_COUNT - (col % TAB_CHAR_COUNT);
-      out += ' '.repeat(spaces);
-      col += spaces;
+      out += ' '.repeat(TAB_CHAR_COUNT);
     } else {
       out += ch;
-      col++;
     }
   }
   return out;

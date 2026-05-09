@@ -1,4 +1,4 @@
-/** Number of spaces a tab character occupies (standard 8-column terminal tab stops). */
+/** Number of spaces each tab character always expands to (fixed-width expansion). */
 export const TAB_CHAR_COUNT = 8;
 
 /** Cursor blink interval in milliseconds. */

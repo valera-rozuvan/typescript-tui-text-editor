@@ -149,7 +149,7 @@ export class DrawContext {
     const reverse = this._reverse;
     for (let i = 0; i < text.length; i++) {
       if (text[i] === '\t') {
-        const nextStop = (Math.floor(this._col / TAB_CHAR_COUNT) + 1) * TAB_CHAR_COUNT;
+        const nextStop = this._col + TAB_CHAR_COUNT;
         for (let c = this._col; c < nextStop; c++) {
           this._buf.set(this._row, c, { char: ' ', fg, bg, bold, dim, reverse });
         }
