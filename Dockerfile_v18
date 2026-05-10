@@ -1,0 +1,41 @@
+FROM debian:bookworm-slim
+
+# ── system build dependencies ────────────────────────────────────────────────
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      curl \
+      ca-certificates \
+      gnupg \
+      gcc \
+      g++ \
+      make \
+      python3 \
+ && rm -rf /var/lib/apt/lists/*
+
+# ── Node.js 18 from NodeSource ───────────────────────────────────────────────
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+ && apt-get install -y --no-install-recommends nodejs \
+ && rm -rf /var/lib/apt/lists/*
+
+# ── node-gyp (needed to compile the N-API PTY addon for UI tests) ────────────
+RUN npm install -g node-gyp@9.4.1
+
+# ── project ──────────────────────────────────────────────────────────────────
+WORKDIR /app
+
+COPY . .
+
+# install the only npm dependency (typescript)
+RUN npm install
+
+# compile the main TypeScript project
+RUN npm run build
+
+# compile unit tests
+RUN node_modules/.bin/tsc -p unit-tests/tsconfig.json
+
+# build the N-API PTY addon and compile UI test TypeScript
+RUN bash ui-tests/build.sh
+
+# ── default command ───────────────────────────────────────────────────────────
+CMD ["bash", "run-tests.sh"]

@@ -211,17 +211,20 @@ docker run hello-world  # should print a "Hello from Docker!" message
 From the repository root:
 
 ```bash
-docker build -t node-text-editor .
+docker build -f Dockerfile_v26 -t node-text-editor-node-v26 .
 ```
 
-The image installs Node.js 22, compiles the project, builds the native PTY addon,
+The image installs Node.js version 26.x, compiles the project, builds the native PTY addon,
 and compiles all test suites.  This takes roughly 2–4 minutes on first run; subsequent
 builds are faster thanks to layer caching.
+
+**NOTE**: There are also Dockerfiles available for versions v18.x, v20.x, v22.x, and
+v24.x; just update the Dockerfile name appropriately. 
 
 ### Run all tests
 
 ```bash
-docker run --rm node-text-editor
+docker run --rm node-text-editor-node-v26
 ```
 
 The container runs three commands in sequence:
