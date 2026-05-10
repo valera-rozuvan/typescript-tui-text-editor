@@ -298,18 +298,18 @@ export const tests: TestCase[] = [
     },
   },
   {
-    name: 'DrawContext.write: tab at col 3 expands to next 8-column stop',
+    name: 'DrawContext.write: tab at col 3 expands to exactly TAB_CHAR_COUNT spaces',
     fn: () => {
       const sb = new ScreenBuffer(2, 20);
       const ctx = new DrawContext(sb);
       ctx.moveTo(0, 0);
       ctx.write('abc'); // advances to col 3
-      ctx.write('\t'); // next stop: col 8 → fills cols 3–7
-      for (let c = 3; c < 8; c++) {
+      ctx.write('\t'); // fixed-width: fills cols 3–10 with 8 spaces, cursor lands at col 11
+      for (let c = 3; c < 11; c++) {
         assert.equal(sb.cells[0][c].char, ' ', `col ${c} should be space`);
       }
-      // col 8 should still be dirty (not written yet)
-      assert.equal(sb.cells[0][8].char, DIRTY_CHAR);
+      // col 11 should still be dirty (not written yet)
+      assert.equal(sb.cells[0][11].char, DIRTY_CHAR);
     },
   },
   {
