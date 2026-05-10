@@ -60,6 +60,22 @@ In the **file browser**: arrows navigate, `Enter` opens a file or enters a direc
 
 In **search**: type to filter results, `↑/↓` to navigate, `Enter` to jump to the selected result, `Escape` to close.
 
+## Note on imports for Node.js TypeScript source files
+
+All intra-project imports use `.js` extensions, even though the source files are `.ts`:
+
+```ts
+import { Cursor } from './Cursor.js';   // source file is Cursor.ts
+```
+
+This is required by `"moduleResolution": "NodeNext"` in `tsconfig.json`. TypeScript with this setting does not rewrite import paths during compilation — it emits them verbatim into the compiled output in `dist/`. At runtime, Node.js resolves the `.js` path against the compiled file, which is correct.
+
+If imports used `.ts` extensions instead, TypeScript would emit `import './Cursor.ts'` into the compiled JS, which Node.js would reject at runtime because no `.ts` file exists in `dist/`.
+
+TypeScript's type checker understands that a `.js` import path resolves to the corresponding `.ts` source file, so type-checking works correctly despite the apparent mismatch.
+
+The alternative — using `"moduleResolution": "bundler"` — would allow omitting extensions entirely, but requires adding a bundler (webpack, esbuild, etc.), which would conflict with this project's zero-runtime-dependency goal.
+
 ## Unit Tests
 
 ### Structure
