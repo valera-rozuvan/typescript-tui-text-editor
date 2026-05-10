@@ -161,6 +161,105 @@ node unit-tests/runner.mjs --parallel --threads 8
 
 The `--threads N` flag is only meaningful together with `--parallel`. Without `--parallel` tests always run sequentially regardless of `--threads`.
 
+## Docker
+
+Run the full test suite (unit tests + UI tests) inside an isolated Debian container
+without installing Node.js or any build tools on the host.
+
+### Install Docker on Debian/Ubuntu
+
+```bash
+# Remove any old Docker packages
+sudo apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+
+# Add Docker's official GPG key and repository
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+# (optional) run docker without sudo
+sudo usermod -aG docker "$USER"
+newgrp docker
+```
+
+On **Ubuntu** replace `debian` with `ubuntu` in the repository URL above, or use:
+
+```bash
+sudo apt-get install -y docker.io   # simpler, slightly older version
+```
+
+Verify the installation:
+
+```bash
+docker --version        # Docker version 24.x or newer
+docker run hello-world  # should print a "Hello from Docker!" message
+```
+
+### Build the Docker image
+
+From the repository root:
+
+```bash
+docker build -t node-text-editor .
+```
+
+The image installs Node.js 22, compiles the project, builds the native PTY addon,
+and compiles all test suites.  This takes roughly 2–4 minutes on first run; subsequent
+builds are faster thanks to layer caching.
+
+### Run all tests
+
+```bash
+docker run --rm node-text-editor
+```
+
+The container runs three commands in sequence:
+
+| # | Command | What it tests |
+|---|---------|---------------|
+| 1 | `node unit-tests/runner.mjs` | All unit test suites, sequential |
+| 2 | `node unit-tests/runner.mjs --parallel` | Same suites, parallel (exercises the worker-thread runner) |
+| 3 | `node ui-tests/runner.mjs --no-build` | All 12 end-to-end UI test suites |
+
+At the end the container prints:
+
+```
+════════════════════════════════════════════════════════
+FINAL SUMMARY
+════════════════════════════════════════════════════════
+Commands run:    3
+Commands passed: 3
+Commands failed: 0
+════════════════════════════════════════════════════════
+All commands passed.
+```
+
+The container exits with code `0` when every command passes, `1` otherwise.
+
+### Run a single UI test suite
+
+```bash
+docker run --rm node-text-editor \
+  node ui-tests/runner.mjs --no-build --suite startup
+```
+
+Available suite names: `startup`, `text_input`, `multipane`, `file_search`,
+`project_search`, `search_cursor`, `scroll_rendering`, `scroll_rendering_c_code`,
+`readonly_file`, `file_browser`, `js_transform`, `tab_navigation`.
+
+---
+
 ## UI Tests
 
 End-to-end tests that run the full editor inside a pseudo-terminal, inject

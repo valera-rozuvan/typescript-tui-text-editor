@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, access } from 'fs/promises';
+import { readFile, writeFile, mkdir, stat } from 'fs/promises';
 import { basename, dirname } from 'path';
 
 export class Buffer {
@@ -30,9 +30,12 @@ export class Buffer {
     }
     if (fileExists) {
       try {
-        await access(filePath, 2 /* W_OK */);
+        const s = await stat(filePath);
+        // Check mode bits directly: root bypasses access() W_OK checks,
+        // so we treat a file with no write bits as read-only regardless of UID.
+        if ((s.mode & 0o222) === 0) buf.readOnly = true;
       } catch {
-        buf.readOnly = true;
+        // stat failure is non-fatal; leave readOnly = false
       }
     }
     return buf;

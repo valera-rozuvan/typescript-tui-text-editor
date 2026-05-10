@@ -43,6 +43,7 @@ declare module 'fs' {
     isFile(): boolean;
     isDirectory(): boolean;
     size: number;
+    mode: number;
   }
   export function readdirSync(path: string): string[];
   export function readFileSync(path: string, encoding: 'utf8'): string;
@@ -51,10 +52,12 @@ declare module 'fs' {
 }
 
 declare module 'fs/promises' {
+  import { Stats } from 'fs';
   export function readFile(path: string, encoding: 'utf8'): Promise<string>;
   export function writeFile(path: string, data: string, encoding: 'utf8'): Promise<void>;
   export function mkdir(path: string, options: { recursive: boolean }): Promise<string | undefined>;
   export function access(path: string, mode?: number): Promise<void>;
+  export function stat(path: string): Promise<Stats>;
 }
 
 declare module 'path' {

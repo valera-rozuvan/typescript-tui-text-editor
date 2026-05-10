@@ -1,0 +1,7 @@
+.git/
+.claude/
+node_modules/
+dist/
+unit-tests/dist/
+ui-tests/dist/
+ui-tests/pty/build/
