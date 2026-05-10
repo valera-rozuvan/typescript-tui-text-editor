@@ -2,4 +2,6 @@ dist/*
 ui-tests/dist/*
 unit-tests/dist/*
 
+ui-tests/pty/build/*
+
 node_modules/*
