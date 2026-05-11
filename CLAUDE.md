@@ -10,6 +10,7 @@ npm run build      # tsc — compile to dist/
 npm run dev        # tsc --watch
 npm start          # node dist/index.js (no file arg)
 node dist/index.js [file]   # run the editor
+npm run clean      # delete dist/, unit-tests/dist/, ui-tests/dist/, ui-tests/pty/build/, node_modules/
 ```
 
 ## Architecture

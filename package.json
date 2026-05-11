@@ -13,7 +13,8 @@
     "ui-test:suite": "node ui-tests/runner.mjs --suite",
     "ui-test:suite:debug": "node ui-tests/runner.mjs --debug --suite",
     "ui-test:build": "bash ui-tests/build.sh",
-    "make-exec": "bash scripts/make-exec.sh"
+    "make-exec": "bash scripts/make-exec.sh",
+    "clean": "rm -rf dist unit-tests/dist ui-tests/dist ui-tests/pty/build node_modules"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

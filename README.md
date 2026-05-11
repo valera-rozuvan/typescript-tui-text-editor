@@ -46,6 +46,14 @@ npm run make-exec   # adds #!/usr/bin/env node shebang and chmod +x dist/index.j
 
 Run `make-exec` once after each `npm run build`. It is idempotent — running it multiple times is safe.
 
+To remove all build artifacts and dependencies:
+
+```bash
+npm run clean   # deletes dist/, unit-tests/dist/, ui-tests/dist/, ui-tests/pty/build/, node_modules/
+```
+
+After `clean`, run `npm install` and `npm run build` (plus `npm run ui-test:build` if you need the UI tests) to restore everything.
+
 ## Key Bindings
 
 | Key | Action |
