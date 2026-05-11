@@ -1,6 +1,20 @@
 # node.js text editor
 
-A terminal UI (TUI) text editor written in TypeScript, built entirely from scratch with no runtime dependencies.
+A terminal UI (TUI) text editor written in TypeScript, built entirely from scratch, with no runtime dependencies.
+
+Idea behind using Node.js is that scripting using JavaScript can be built in relatively easy.
+
+This thing was built from the ground up using Claude Code.
+
+During the development, a human (me, Valera) is used for testing.
+
+For all issues found, automated tests (both unit tests and UI tests) are added to catch regressions in the future.
+
+This is mostly for my own use, I do not expect anyone else to pick up this editor, since, practically, anyone can develop their own text editor using AI.
+
+This is public only for convenience - I can install it using NPM on an system I work on (and everywhere I work - I have Node.js available.)
+
+**TODO**: Publish to NPM.
 
 ## Features
 
