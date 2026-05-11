@@ -18,12 +18,14 @@ This is public only for convenience - I can install it using NPM on an system I 
 
 ## Features
 
-- **Multi-pane editing** — up to 4 panes simultaneously (single, horizontal split, vertical split, quad)
+- **Multi-pane editing** — up to 4 panes simultaneously (single, horizontal split, vertical split, quad); each pane holds multiple open buffers, cycled with `Alt+←/→`
 - **File browser** — toggle a directory navigator on the left or right side
 - **Fuzzy search** — search within open files or across the entire project tree
 - **Project search** — walks up from the current file to the nearest `.git/` root, then recursively searches all files with fuzzy matching and result previews
+- **JS Transform Panel** — press `Alt+J` to open an inline JavaScript editor; write a function that receives each line and returns the transformed result, then `Alt+J` again to apply it to the active buffer; `Alt+C` to cancel
 - **Syntax highlighting** — JavaScript, TypeScript, C, C++, Markdown, HTML, CSS; chunk-based cache invalidated on edit
 - **True-color theme** — Catppuccin Mocha palette via RGB ANSI escape sequences
+- **Read-only mode** — automatically detected from file permissions; the editor displays a read-only indicator and blocks writes
 
 ## Dependencies
 
