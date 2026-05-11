@@ -250,6 +250,64 @@ All commands passed.
 
 The container exits with code `0` when every command passes, `1` otherwise.
 
+### Multi-version test script
+
+`docker-test-all.sh` automates the full build-and-test cycle across all
+supported Node.js versions in one command:
+
+```bash
+bash docker-test-all.sh
+```
+
+What the script does, in order:
+
+1. **Removes** any existing `node-text-editor-node-v*` Docker images so every
+   build starts from a clean slate.
+2. **Builds** each versioned image (`Dockerfile_v18` → `Dockerfile_v26`)
+   silently, saving the full log to `docker-logs/build_v<N>.log`.
+3. **Runs** the full test suite inside each successfully built container
+   silently, saving the full log to `docker-logs/run_v<N>.log`.
+4. **Prints a summary chart** after all versions finish.
+
+All docker output goes to the log files only. The terminal shows a live
+elapsed-time counter for each step (updated every second via `\r`), then
+replaces it with the final result when the step completes:
+
+```
+════════════════════════════════════════════════════════
+ Building and testing all versions
+════════════════════════════════════════════════════════
+
+  build  Dockerfile_v18        2m14s     PASS
+  test   Dockerfile_v18        1m32s     PASS  3/3 cmds
+
+  build  Dockerfile_v20        1m58s     PASS
+  test   Dockerfile_v20        1m29s     PASS  3/3 cmds
+
+  ...
+
+════════════════════════════════════════════════════════
+ RESULTS SUMMARY
+════════════════════════════════════════════════════════
+
+  Node.js    Build     Build time    Tests     Cmds passed    Cmds failed
+  ---------  --------  ------------  --------  -------------  ------------
+  v18        PASS      2m14s         PASS      3              0
+  v20        PASS      1m58s         PASS      3              0
+  v22        PASS      2m03s         PASS      3              0
+  v24        PASS      2m11s         PASS      3              0
+  v26        PASS      2m07s         PASS      3              0
+
+  Versions tested:     5
+  Versions all-pass:   5
+  Versions with fails: 0
+```
+
+The script exits with code `0` when every version passes all tests, `1` when
+any version fails to build or has test failures.  Logs in `docker-logs/` are
+retained after the run for post-mortem inspection; the directory is listed in
+`.gitignore`.
+
 ### Run a single UI test suite
 
 ```bash

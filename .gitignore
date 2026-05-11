@@ -5,3 +5,5 @@ unit-tests/dist/*
 ui-tests/pty/build/*
 
 node_modules/*
+
+docker-logs/*
