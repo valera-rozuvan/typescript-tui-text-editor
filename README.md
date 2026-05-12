@@ -406,3 +406,10 @@ ui-tests/
   README.md                Architecture and usage documentation
   PLAN.md                  Step-by-step implementation plan
 ```
+
+## License
+
+This project is licensed under the MIT license. See [LICENSE](LICENSE) for more information.
+
+Copyright (c) 2026 [Valera Rozuvan](https://valera.rozuvan.net/)
+

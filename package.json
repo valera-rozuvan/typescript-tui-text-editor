@@ -1,7 +1,20 @@
 {
-  "name": "node-text-editor",
-  "version": "0.1.0",
+  "name": "vted",
+  "version": "1.0.0",
+  "description": "a TUI text editor using TypeScript for both the editor and scripting capabilities",
+  "author": "Valera Rozuvan <valera@rozuvan.net> (https://valera.rozuvan.net/)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/valera-rozuvan/typescript-tui-text-editor.git"
+  },
   "type": "module",
+  "bin": {
+    "vted": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -17,6 +30,6 @@
     "clean": "rm -rf dist unit-tests/dist ui-tests/dist ui-tests/pty/build node_modules"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "5.9.3"
   }
 }
