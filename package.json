@@ -1,5 +1,5 @@
 {
-  "name": "vted",
+  "name": "@valera_rozuvan/vted",
   "version": "1.0.0",
   "description": "a TUI text editor using TypeScript for both the editor and scripting capabilities",
   "author": "Valera Rozuvan <valera@rozuvan.net> (https://valera.rozuvan.net/)",
