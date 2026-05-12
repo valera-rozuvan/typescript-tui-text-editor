@@ -14,7 +14,15 @@ This is mostly for my own use, I do not expect anyone else to pick up this edito
 
 This is public only for convenience - I can install it using NPM on an system I work on (and everywhere I work - I have Node.js available.)
 
-**TODO**: Publish to NPM.
+Available from [NPM @valera_rozuvan/vted](https://www.npmjs.com/package/@valera_rozuvan/vted); install via:
+
+```shell
+npm install -g @valera_rozuvan/vted
+
+# Now you should have 'vted' command available!
+# Try:
+#   vted new_file.txt
+```
 
 ## Features
 
