@@ -8,6 +8,9 @@
     "type": "git",
     "url": "https://github.com/valera-rozuvan/typescript-tui-text-editor.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
     "vted": "./dist/index.js"
