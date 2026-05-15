@@ -1,5 +1,7 @@
 # node.js text editor
 
+this is a test
+
 A terminal UI (TUI) text editor written in TypeScript, built entirely from scratch, with no runtime dependencies.
 
 Idea behind using Node.js is that scripting using JavaScript can be built in relatively easy.
