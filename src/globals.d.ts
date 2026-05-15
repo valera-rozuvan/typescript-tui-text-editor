@@ -5,6 +5,7 @@ declare const process: {
   cwd(): string;
   exit(code?: number): never;
   env: Record<string, string | undefined>;
+  platform: string;
   stdin: {
     isTTY: boolean;
     setRawMode(mode: boolean): void;
@@ -18,6 +19,8 @@ declare const process: {
     write(data: string): boolean;
     columns?: number;
     rows?: number;
+    on(event: 'resize', listener: () => void): typeof process.stdout;
+    on(event: string,   listener: (...args: unknown[]) => void): typeof process.stdout;
   };
   stderr: {
     write(data: string): boolean;

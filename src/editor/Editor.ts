@@ -110,8 +110,10 @@ export class Editor {
     this.layout.update(this.term.width, this.term.height);
     this.term.enableRawMode();
 
-    process.on('SIGTERM', () => this.quit());
     process.on('SIGINT', () => this.quit());
+    if (process.platform !== 'win32') {
+      process.on('SIGTERM', () => this.quit());
+    }
 
     process.stdin.on('data', (data: Uint8Array) => {
       const events = parseKeys(data);

@@ -35,6 +35,20 @@ npm install -g @valera_rozuvan/vted
 - **True-color theme** — Catppuccin Mocha palette via RGB ANSI escape sequences
 - **Read-only mode** — automatically detected from file permissions; the editor displays a read-only indicator and blocks writes
 
+## Platform support
+
+The editor runs on **Linux**, **macOS**, and **Windows 10 build 1809 (October 2018 Update) or later**.
+
+On Windows, use **Windows Terminal** or any modern console host. Node.js v22 automatically enables `ENABLE_VIRTUAL_TERMINAL_PROCESSING` on Windows TTY handles, so ANSI colours and escape sequences render correctly without any extra configuration.
+
+Key Windows-specific behaviours:
+
+- **CRLF files** — files with Windows line endings (`\r\n`) are read correctly. The editor normalises them to `\n` in memory, then writes them back as `\r\n` on save, preserving the original line-ending style.
+- **Terminal resize** — Node.js does not deliver `SIGWINCH` on Windows. The editor also listens for `process.stdout`'s `'resize'` event (emitted by Node.js v12+ on all platforms), so the layout reflows correctly when the window is resized.
+- **`make-exec`** — `npm run make-exec` prepends the `#!/usr/bin/env node` shebang to `dist/index.js` on all platforms, but skips `chmod +x` on Windows (meaningless there). Run with `node dist/index.js` as usual.
+- **UI tests** — the native PTY addon uses the Windows **ConPTY** API (`CreatePseudoConsole`) on Windows instead of POSIX `forkpty`. Building it requires the Windows SDK, which ships with Visual Studio or the "Desktop development with C++" workload in Build Tools for Visual Studio.
+- **WSL** — inside WSL, Node.js sees a Linux environment; no Windows-specific code paths are taken.
+
 ## Dependencies
 
 Only one dev dependency: `typescript`. Everything else is written from scratch using Node.js built-ins.
@@ -107,6 +121,16 @@ If imports used `.ts` extensions instead, TypeScript would emit `import './Curso
 TypeScript's type checker understands that a `.js` import path resolves to the corresponding `.ts` source file, so type-checking works correctly despite the apparent mismatch.
 
 The alternative — using `"moduleResolution": "bundler"` — would allow omitting extensions entirely, but requires adding a bundler (webpack, esbuild, etc.), which would conflict with this project's zero-runtime-dependency goal.
+
+## Running all tests locally
+
+To run the full test suite (unit tests sequential, unit tests parallel, and all UI suites) in one command:
+
+```bash
+npm run all-tests
+```
+
+This invokes `scripts/run-tests.mjs`, which runs the three commands in sequence and prints a combined pass/fail summary. Exit code is `0` when all commands pass, `1` otherwise.
 
 ## Unit Tests
 
@@ -259,7 +283,8 @@ v24.x; just update the Dockerfile name appropriately.
 docker run --rm node-text-editor-node-v26
 ```
 
-The container runs three commands in sequence:
+The container runs `scripts/run-tests.mjs` (also available locally as `npm run all-tests`),
+which executes three commands in sequence:
 
 | # | Command | What it tests |
 |---|---------|---------------|
@@ -284,11 +309,13 @@ The container exits with code `0` when every command passes, `1` otherwise.
 
 ### Multi-version test script
 
-`docker-test-all.sh` automates the full build-and-test cycle across all
+`scripts/docker-test-all.mjs` automates the full build-and-test cycle across all
 supported Node.js versions in one command:
 
 ```bash
-bash docker-test-all.sh
+node scripts/docker-test-all.mjs
+# or via npm
+npm run docker-tests
 ```
 
 What the script does, in order:
@@ -391,8 +418,9 @@ node ui-tests/runner.mjs --no-build
 ```
 ui-tests/
   pty/
-    pty.c                            N-API C addon (forkpty wrapper)
-    binding.gyp                      node-gyp build config
+    pty.c                            N-API C addon (POSIX forkpty wrapper — Linux/macOS)
+    pty_win.c                        N-API C addon (Windows ConPTY wrapper)
+    binding.gyp                      node-gyp build config (platform-conditional)
   tests/
     PtyProcess.ts                    TypeScript wrapper around the native addon
     TerminalScreen.ts                VT100 parser / virtual screen grid
@@ -410,7 +438,7 @@ ui-tests/
     11_js_transform.test.ts          JS transform modal tests
     12_tab_navigation.test.ts        Tab character rendering and cursor movement tests
   runner.mjs               Test runner
-  build.sh                 One-shot build script
+  build.mjs                Cross-platform build script
   README.md                Architecture and usage documentation
   PLAN.md                  Step-by-step implementation plan
 ```

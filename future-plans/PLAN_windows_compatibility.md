@@ -16,10 +16,8 @@ Node.js version target: v22 (same as Linux).
 | 3 | `src/editor/Editor.ts:113` | `SIGTERM` is a no-op on Windows — cleanup never runs | Major |
 | 4 | `ui-tests/pty/pty.c` | `forkpty()` / POSIX PTY API — does not exist on Windows | Critical |
 | 5 | `ui-tests/pty/binding.gyp` | `gyp` target only handles Linux linker flags; no Windows path | Critical |
-| 6 | `package.json` scripts `ui-test:build`, `make-exec` | Invoke `bash` — unavailable natively on Windows | Major |
-| 7 | `ui-tests/pty/make-exec.sh` (in pty dir) | Bash + `chmod` — meaningless on Windows | Minor |
-| 8 | `src/search/ProjectSearch.ts:44` | Dotfile filter hides files whose names start with `.`; harmless but Windows has no such convention | Minor |
-| 9 | (all path display sites) | `path.join()` returns `\` on Windows — displayed paths look different | Minor |
+| 6 | `src/search/ProjectSearch.ts:44` | Dotfile filter hides files whose names start with `.`; harmless but Windows has no such convention | Minor |
+| 7 | (all path display sites) | `path.join()` returns `\` on Windows — displayed paths look different | Minor |
 
 Issues **not** present (confirming no action needed):
 
@@ -205,78 +203,7 @@ Windows machine or cross-compilation toolchain to verify. Estimate: ~300–400 l
 
 ---
 
-## Fix 5 — Replace bash scripts with Node.js scripts (Major)
-
-**Files:** `package.json`, `ui-tests/pty/make-exec.sh`
-
-**Problem:** Two `package.json` scripts call `bash` directly:
-
-```json
-"ui-test:build": "bash ui-tests/build.sh",
-"make-exec":     "bash scripts/make-exec.sh"
-```
-
-Bash is not available on a plain Windows installation.
-
-### 5a — `ui-test:build` → `node ui-tests/build.mjs`
-
-Create `ui-tests/build.mjs` as a Node.js script that:
-1. Detects the platform.
-2. Runs `node-gyp configure build` inside `ui-tests/pty/` via `child_process.execSync`.
-3. Runs `tsc -p ui-tests/tsconfig.json`.
-
-```js
-// ui-tests/build.mjs
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const root = dirname(fileURLToPath(import.meta.url));
-const ptyDir = join(root, 'pty');
-
-execSync('node-gyp configure build', { cwd: ptyDir, stdio: 'inherit' });
-execSync('tsc -p ui-tests/tsconfig.json', { cwd: dirname(root), stdio: 'inherit' });
-```
-
-Update `package.json`:
-```json
-"ui-test:build": "node ui-tests/build.mjs"
-```
-
-### 5b — `make-exec` → `node scripts/make-exec.mjs`
-
-The existing `make-exec.sh` prepends a shebang and runs `chmod +x`. On Windows, neither
-operation is meaningful. Replace with a Node.js script that:
-- On POSIX: prepends the shebang to `dist/index.js` and sets the execute bit via
-  `fs.chmodSync`.
-- On Windows: only prepends the shebang (for WSL/Git-Bash users) and skips `chmod`.
-
-```js
-// scripts/make-exec.mjs
-import { readFileSync, writeFileSync, chmodSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const target = join(root, 'dist', 'index.js');
-const shebang = '#!/usr/bin/env node\n';
-const content = readFileSync(target, 'utf8');
-if (!content.startsWith(shebang)) {
-  writeFileSync(target, shebang + content, 'utf8');
-}
-if (process.platform !== 'win32') {
-  chmodSync(target, 0o755);
-}
-```
-
-Update `package.json`:
-```json
-"make-exec": "node scripts/make-exec.mjs"
-```
-
----
-
-## Fix 6 — Minor: path display normalisation (Minor)
+## Fix 5 — Minor: path display normalisation (Minor)
 
 **Files:** `src/ui/StatusBar.ts`, `src/terminal/Renderer.ts` (anywhere a `filePath` is
 displayed to the user)
@@ -309,8 +236,7 @@ Work through the items in this order to unblock testing at each step:
 2. **Fix 3** — `SIGTERM` guard: one-line change, minimal risk.
 3. **Fix 2** — CRLF normalization: affects `Buffer.ts`; add unit tests for the
    `\r\n` round-trip before committing.
-4. **Fix 5** — Replace bash scripts: prerequisite for running `ui-test:build` on Windows.
-5. **Fix 4** — ConPTY addon: largest item; implement `pty_win.c` and update `binding.gyp`;
+4. **Fix 4** — ConPTY addon: largest item; implement `pty_win.c` and update `binding.gyp`;
    test the full UI suite on Windows.
 6. **Fix 6** — Path display: purely cosmetic; do last.
 

@@ -111,7 +111,7 @@ Available suites: `startup`, `text_input`, `multipane`, `file_search`, `project_
 
 ### Running all tests together
 
-`run-tests.sh` (used inside the Docker images) runs unit tests (sequential + parallel) and all UI suites in one shot and prints a combined pass/fail summary.
+`scripts/run-tests.mjs` (used inside the Docker images and via `npm run all-tests`) runs unit tests (sequential + parallel) and all UI suites in one shot and prints a combined pass/fail summary.
 
 ## Rendering Model
 
@@ -145,3 +145,249 @@ The UI test suite `tab_navigation` verifies this behaviour end-to-end: it reads 
 - **ESM imports** — all intra-project imports must use `.js` extensions (NodeNext module resolution).
 - **`Buffer.save()` auto-mkdir** — `save()` calls `mkdir(dirname(filePath), { recursive: true })` before writing, so saving to a new path with missing parent directories works automatically.
 - **`searchProject` API** — signature is `(needle, startDir, onResults, signal, maxResults?)`. Pass a mutable `{ cancelled: boolean }` object as the signal; set `.cancelled = true` to abort. `onResults` is called with partial results every 20 files and once on completion.
+
+---
+
+## Windows Platform
+
+The editor supports Windows 10 build 1809+ natively. This section documents every Windows-specific code path, why it exists, and how it works.
+
+### What works without changes
+
+Node.js v22 on Windows handles several things transparently:
+
+- `process.stdin.setRawMode()` — implemented via `uv_tty_set_mode`; works identically to POSIX.
+- ANSI escape sequences — Node.js automatically calls `SetConsoleMode` with `ENABLE_VIRTUAL_TERMINAL_PROCESSING` on Windows TTY handles, so all colour and cursor ANSI codes render correctly in Windows Terminal and modern `conhost.exe`.
+- `process.stdout.columns` / `.rows` — works on Windows.
+- All `fs/promises` APIs (`readFile`, `writeFile`, `mkdir`, `stat`) — fully cross-platform in Node.js.
+- `SIGINT` — emitted correctly on Windows from Ctrl+C.
+
+### Terminal resize — `src/terminal/Terminal.ts`
+
+**Problem:** `SIGWINCH` is a POSIX signal. Node.js does not deliver it on Windows, so `process.on('SIGWINCH', ...)` is silently ignored. Without a resize handler the layout freezes at the initial window size.
+
+**Fix:** `Terminal.ts` registers two resize listeners in the constructor:
+
+```ts
+// POSIX resize signal (Linux / macOS)
+process.on('SIGWINCH', () => {
+  this._updateSize();
+  for (const cb of this._resizeCallbacks) cb();
+});
+
+// Windows (and harmless duplicate on POSIX) — Node.js v12+
+process.stdout.on('resize', () => {
+  this._updateSize();
+  for (const cb of this._resizeCallbacks) cb();
+});
+```
+
+`process.stdout` emits `'resize'` cross-platform whenever the TTY dimensions change. On Linux and macOS both listeners may fire; `_updateSize()` is idempotent so double-firing is harmless.
+
+**globals.d.ts** — `process.stdout.on(event: 'resize', ...)` and `process.stdout.on(event: string, ...)` must be declared here because the project uses hand-written ambient types instead of `@types/node`.
+
+### SIGTERM guard — `src/editor/Editor.ts`
+
+**Problem:** Registering a `SIGTERM` handler does not throw on Windows, but the handler is never called. `SIGTERM` is only meaningful on POSIX.
+
+**Fix:** The `start()` method guards the registration:
+
+```ts
+process.on('SIGINT', () => this.quit());
+if (process.platform !== 'win32') {
+  process.on('SIGTERM', () => this.quit());
+}
+```
+
+`process.platform` is declared in `src/globals.d.ts` as `string`.
+
+### CRLF line-ending handling — `src/editor/Buffer.ts`
+
+**Problem:** Windows files conventionally use `\r\n` line endings. `content.split('\n')` leaves a trailing `\r` on every line, which renders as a visible character and corrupts cursor positions.
+
+**Fix (read side):** Both the constructor and `fromFile` normalise before splitting:
+
+```ts
+// constructor
+const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+this.lines = normalized === '' ? [''] : normalized.split('\n');
+
+// fromFile
+const raw = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+const lines = raw.split('\n');
+```
+
+The double replace — `\r\n` first, bare `\r` second — handles CRLF files (Windows), CR-only files (old Mac OS 9), and mixed-ending files in one pass.
+
+**Fix (write side):** `Buffer` carries a `lineEnding: '\r\n' | '\n'` field (default `'\n'`). `fromFile` detects the original style before normalising:
+
+```ts
+buf.lineEnding = content.includes('\r\n') ? '\r\n' : '\n';
+```
+
+`toString()` uses it when joining:
+
+```ts
+toString(): string {
+  return this.lines.join(this.lineEnding) + this.lineEnding;
+}
+```
+
+`save()` calls `toString()`, so CRLF files are saved back as CRLF with no extra code. New buffers created via the constructor default to `'\n'`; set `buf.lineEnding = '\r\n'` manually if you need CRLF output from an in-memory buffer.
+
+**Unit tests** — `unit-tests/tests/buffer-crlf.test.ts` covers: constructor normalisation, `fromFile` detection, `toString` round-trip for both CRLF and LF files, and manually overriding `lineEnding`.
+
+### Path display normalisation — `src/utils/displayPath.ts`
+
+**Problem:** `path.resolve()` on Windows returns backslash-separated paths (`C:\Users\…\file.ts`). These look foreign in the status bar and search results for users accustomed to forward slashes.
+
+**Fix:** A small helper converts separators only in display contexts:
+
+```ts
+export function displayPath(p: string): string {
+  return process.platform === 'win32' ? p.replace(/\\/g, '/') : p;
+}
+```
+
+It is imported and called in:
+
+- `src/ui/StatusBar.ts` — wraps `buf.filePath` before rendering the status line.
+- `src/ui/SearchPanel.ts` — wraps `result.filePath` in `getResultPath()`.
+
+File I/O is never routed through `displayPath`; it is used exclusively where a string is written to the virtual screen buffer.
+
+### UI test PTY addon — `ui-tests/pty/`
+
+The UI tests spawn the editor inside a pseudo-terminal and assert on screen content. The POSIX implementation (`pty.c`) wraps `forkpty()`, which does not exist on Windows. A separate Windows implementation (`pty_win.c`) uses **anonymous pipes with `STARTF_USESTDHANDLES`** to capture the child's stdin/stdout directly.
+
+#### Why pipes instead of ConPTY
+
+Windows 10 build 1809+ introduced `CreatePseudoConsole` (ConPTY), but when the parent process is also Node.js, ConPTY does not correctly isolate the child's console: the child's stdout flows to the parent process's console (bypassing the ConPTY output pipe) instead of through `hOutRead`. Simple anonymous pipes avoid this problem entirely and work reliably.
+
+The editor does not need a real PTY to function inside the test harness:
+- `process.stdout.isTTY` is `undefined` (not a terminal), so `setRawMode` is skipped and the editor still renders via `process.stdout.write()`.
+- Terminal dimensions are supplied via `COLUMNS` and `LINES` environment variables (set in `build_env_block()`); `Terminal._updateSize()` falls back to these when `process.stdout.columns/rows` are `undefined`.
+- Keystrokes written to the stdin pipe are delivered to `process.stdin` 'data' events immediately (no line-buffering for a pipe).
+
+#### Session table
+
+`pty_win.c` maintains a global table of up to 64 active sessions:
+
+```c
+typedef struct {
+    BOOL   active;
+    HANDLE hPipeWrite; // parent writes here → child's stdin pipe
+    HANDLE hPipeRead;  // parent reads here  ← child's stdout pipe
+    HANDLE hProcess;   // child process handle
+    HANDLE hThread;    // child thread handle
+    DWORD  dwPid;      // Windows process ID
+} PtySession;
+```
+
+`spawn()` returns `{ fd, pid }` where `fd` is a 1-based index into this table (not a real file descriptor) and `pid` is the Windows process ID from `CreateProcess`.
+
+#### Pipe topology
+
+```
+parent hPipeWrite → hStdinRead  (child reads stdin from here)
+                    hStdinWrite ← closed in child (not needed)
+
+child hStdoutWrite → hStdoutRead ← parent hPipeRead
+```
+
+Two anonymous pipes are created. The child-side ends (`hStdinRead`, `hStdoutWrite`) are passed via `STARTUPINFOEXW.hStdInput/hStdOutput/hStdError` and marked inheritable. The parent-side ends (`hPipeWrite`, `hPipeRead`) are made non-inheritable. After `CreateProcessW`, the child-side ends are closed in the parent.
+
+#### Non-blocking read
+
+POSIX `read()` with `O_NONBLOCK` returns `EAGAIN` when no data is available. The Windows equivalent is `PeekNamedPipe()` to check the byte count first:
+
+```c
+DWORD available = 0;
+if (!PeekNamedPipe(s->hPipeRead, NULL, 0, NULL, &available, NULL) || available == 0) {
+    return null; // no data
+}
+ReadFile(s->hPipeRead, buf, min(available, sizeof(buf)), &n, NULL);
+```
+
+#### Process creation with pipe-based stdio
+
+`CreateProcessW` uses `STARTF_USESTDHANDLES` and `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` to pass exactly the child-side pipe handles, preventing all other parent handles from being inherited:
+
+```c
+HANDLE inherit_list[2] = { hStdinRead, hStdoutWrite };
+// ... initialize attr_list, add PROC_THREAD_ATTRIBUTE_HANDLE_LIST ...
+
+STARTUPINFOEXW si = { 0 };
+si.StartupInfo.cb         = sizeof(si);
+si.StartupInfo.dwFlags    = STARTF_USESTDHANDLES;
+si.StartupInfo.hStdInput  = hStdinRead;
+si.StartupInfo.hStdOutput = hStdoutWrite;
+si.StartupInfo.hStdError  = hStdoutWrite; // merge stderr
+si.lpAttributeList        = attr_list;
+
+CreateProcessW(NULL, wcmd, NULL, NULL, TRUE /* bInheritHandles */,
+    EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT | CREATE_NO_WINDOW,
+    env_block, wcwd, (LPSTARTUPINFOW)&si, &pi);
+```
+
+`bInheritHandles = TRUE` is required for `STARTF_USESTDHANDLES` to deliver the pipe handles to the child. `PROC_THREAD_ATTRIBUTE_HANDLE_LIST` limits which parent handles are actually inherited.
+
+The command line is built as a wide string (`WCHAR *`) from the `execPath` and `args[]` array; args containing spaces are quoted. `CreateProcessW` is used (not `CreateProcessA`) so UTF-8 paths survive the conversion.
+
+#### Terminal dimensions (COLUMNS / LINES env vars)
+
+`build_env_block(cols, rows)` builds a Unicode environment block that inherits the parent's environment minus `COLUMNS`, `LINES`, `TERM`, and `COLORTERM`, then appends:
+
+```
+COLUMNS=<cols>
+LINES=<rows>
+TERM=xterm-256color
+COLORTERM=truecolor
+```
+
+`Terminal._updateSize()` in the editor falls back to these when `process.stdout.columns`/`rows` are `undefined`:
+
+```ts
+private _updateSize(): void {
+  const envCols = parseInt(process.env['COLUMNS'] ?? '', 10);
+  const envRows = parseInt(process.env['LINES'] ?? '', 10);
+  this._width  = process.stdout.columns
+    ?? (Number.isFinite(envCols) && envCols > 0 ? envCols : 80);
+  this._height = process.stdout.rows
+    ?? (Number.isFinite(envRows) && envRows > 0 ? envRows : 24);
+}
+```
+
+#### binding.gyp — platform-conditional compilation
+
+```json
+"conditions": [
+  ["OS=='win'",   { "sources": ["pty_win.c"], "libraries": [] }],
+  ["OS=='linux'", { "sources": ["pty.c"],     "libraries": ["-lutil"] }],
+  ["OS=='mac'",   { "sources": ["pty.c"],     "libraries": [] }]
+]
+```
+
+`node-gyp` selects the correct source file automatically. The Windows build links against the default Windows SDK libraries (no extra `-l` flags needed).
+
+#### Building on Windows
+
+The Windows SDK (included with Visual Studio or "Build Tools for Visual Studio") provides the necessary headers and libraries. `node-gyp` on Windows uses MSVC or Clang-CL automatically if Visual Studio is installed. Run:
+
+```powershell
+npm run ui-test:build   # invokes node ui-tests/build.mjs
+```
+
+### Unit test runner — `unit-tests/runner.mjs`
+
+**Problem:** Node.js ESM `import()` on Windows rejects bare absolute paths like `C:\Users\…\buffer.test.js` with: `Only URLs with a scheme in: file, data, and node are supported`. Windows drive letters (`C:`) look like URL schemes to the parser.
+
+**Fix:** Convert each test file path to a `file://` URL before passing it to `import()`:
+
+```js
+import { pathToFileURL } from 'node:url';
+// …
+.map(f => pathToFileURL(resolve(join(testsDir, f))).href)
+```
+
+`pathToFileURL` produces `file:///C:/Users/…/buffer.test.js`, which the ESM loader accepts on all platforms.

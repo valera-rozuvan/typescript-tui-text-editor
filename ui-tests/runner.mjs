@@ -17,7 +17,7 @@
 import { execSync } from 'node:child_process';
 import { readdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -62,7 +62,7 @@ const entries  = await readdir(distDir);
 const testFiles = entries
   .filter(f => f.endsWith('.test.js'))
   .sort()
-  .map(f => join(distDir, f));
+  .map(f => pathToFileURL(join(distDir, f)).href);
 
 if (testFiles.length === 0) {
   console.log('No test files found in', distDir);

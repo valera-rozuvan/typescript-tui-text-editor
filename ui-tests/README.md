@@ -45,7 +45,6 @@ ui-tests/
   tsconfig.json         TypeScript config (rootDir=tests, outDir=dist)
   runner.mjs            Test runner (compiles + runs all test suites)
   observer.mjs          Debug observer — attaches to a --debug runner session
-  build.sh              One-shot build: node-gyp + tsc
   PLAN.md               Step-by-step design rationale
   README.md             This file
 ```
@@ -68,7 +67,7 @@ node ui-tests/runner.mjs --no-build
 node ui-tests/runner.mjs --debug
 
 # Build the native addon and TypeScript separately
-bash ui-tests/build.sh
+npm run ui-test:build
 ```
 
 Prerequisites:

@@ -119,7 +119,7 @@ full terminal emulator.
 
 - `runner.mjs`: sequential runner that compiles TypeScript and dynamically
   imports `dist/*.test.js` files in sorted order.
-- `build.sh`: convenience script that runs `node-gyp` then `tsc`.
+- `build.mjs`: convenience script that runs `node-gyp` then `tsc`.
 - `package.json` gains `"ui-test"` and `"ui-test:build"` scripts.
 
 ---
