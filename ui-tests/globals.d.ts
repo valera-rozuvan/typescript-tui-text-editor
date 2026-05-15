@@ -13,6 +13,7 @@ declare const process: {
   argv: string[];
   execPath: string;
   pid: number;
+  platform: string;
   cwd(): string;
   exit(code?: number): never;
   env: Record<string, string | undefined>;

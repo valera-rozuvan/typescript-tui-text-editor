@@ -20,7 +20,7 @@
 import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { readdir } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import os from 'node:os';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -64,7 +64,7 @@ else {
   const testFiles = entries
     .filter(f => f.endsWith('.test.js'))
     .sort()
-    .map(f => resolve(join(testsDir, f)));
+    .map(f => pathToFileURL(resolve(join(testsDir, f))).href);
 
   if (testFiles.length === 0) {
     console.log('No test files found in', testsDir);

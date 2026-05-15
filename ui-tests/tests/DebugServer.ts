@@ -5,6 +5,13 @@ import { unlink } from 'node:fs/promises';
 import type { Server, Socket } from 'node:net';
 import type { TerminalScreen } from './TerminalScreen.js';
 
+function makeSocketPath(): string {
+  if (process.platform === 'win32') {
+    return `\\\\.\\pipe\\node-text-editor-ui-debug-${process.pid}`;
+  }
+  return join(tmpdir(), `node-text-editor-ui-debug-${process.pid}.sock`);
+}
+
 type DebugMessage =
   | { type: 'step'; suite: string; test: string; action: string; screen: string[]; cursor: { row: number; col: number } }
   | { type: 'test_pass'; suite: string; test: string }
@@ -25,14 +32,16 @@ export class DebugServer {
   private _incomingBuf = '';
 
   constructor() {
-    this._socketPath = join(tmpdir(), `node-text-editor-ui-debug-${process.pid}.sock`);
+    this._socketPath = makeSocketPath();
     this._server = createServer(this._onConnection.bind(this));
   }
 
   get path(): string { return this._socketPath; }
 
   async start(): Promise<void> {
-    try { await unlink(this._socketPath); } catch {}
+    if (process.platform !== 'win32') {
+      try { await unlink(this._socketPath); } catch {}
+    }
     return new Promise((resolve, reject) => {
       this._server.listen(this._socketPath, resolve as () => void);
       this._server.on('error', reject);
@@ -91,7 +100,9 @@ export class DebugServer {
     this._socket?.destroy();
     this._socket = null;
     await new Promise<void>(resolve => this._server.close(() => resolve()));
-    try { await unlink(this._socketPath); } catch {}
+    if (process.platform !== 'win32') {
+      try { await unlink(this._socketPath); } catch {}
+    }
   }
 
   private _onConnection(socket: Socket): void {

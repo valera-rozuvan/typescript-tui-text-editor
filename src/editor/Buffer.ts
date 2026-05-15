@@ -6,9 +6,11 @@ export class Buffer {
   filePath: string | null = null;
   modified = false;
   readOnly = false;
+  lineEnding: '\r\n' | '\n' = '\n';
 
   constructor(content = '') {
-    this.lines = content === '' ? [''] : content.split('\n');
+    const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    this.lines = normalized === '' ? [''] : normalized.split('\n');
   }
 
   static async fromFile(filePath: string): Promise<Buffer> {
@@ -17,7 +19,9 @@ export class Buffer {
     let fileExists = true;
     try {
       const content = await readFile(filePath, 'utf8');
-      const lines = content.split('\n');
+      buf.lineEnding = content.includes('\r\n') ? '\r\n' : '\n';
+      const raw = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const lines = raw.split('\n');
       // Files typically end with \n, which creates a trailing empty element — remove it
       if (lines.length > 1 && lines[lines.length - 1] === '') {
         lines.pop();
@@ -104,7 +108,7 @@ export class Buffer {
   }
 
   toString(): string {
-    return this.lines.join('\n') + '\n';
+    return this.lines.join(this.lineEnding) + this.lineEnding;
   }
 
   async save(): Promise<void> {

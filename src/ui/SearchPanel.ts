@@ -1,5 +1,6 @@
 import type { FileSearchResult } from '../search/FileSearch.js';
 import type { ProjectSearchResult } from '../search/ProjectSearch.js';
+import { displayPath } from '../utils/displayPath.js';
 
 export type SearchMode = 'file' | 'project';
 
@@ -80,7 +81,7 @@ export class SearchPanel {
 
   getResultPath(result: SearchResult): string {
     if ('buffer' in result) return result.buffer.name;
-    return result.filePath;
+    return displayPath(result.filePath);
   }
 
   getResultLine(result: SearchResult): number {

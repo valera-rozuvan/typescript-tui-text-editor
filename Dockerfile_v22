@@ -35,7 +35,7 @@ RUN npm run build
 RUN node_modules/.bin/tsc -p unit-tests/tsconfig.json
 
 # build the N-API PTY addon and compile UI test TypeScript
-RUN bash ui-tests/build.sh
+RUN node ui-tests/build.mjs
 
 # ── default command ───────────────────────────────────────────────────────────
-CMD ["bash", "run-tests.sh"]
+CMD ["node", "scripts/run-tests.mjs"]

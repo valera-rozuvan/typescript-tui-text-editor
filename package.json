@@ -28,9 +28,11 @@
     "ui-test:debug": "node ui-tests/runner.mjs --debug",
     "ui-test:suite": "node ui-tests/runner.mjs --suite",
     "ui-test:suite:debug": "node ui-tests/runner.mjs --debug --suite",
-    "ui-test:build": "bash ui-tests/build.sh",
-    "make-exec": "bash scripts/make-exec.sh",
-    "clean": "rm -rf dist unit-tests/dist ui-tests/dist ui-tests/pty/build node_modules"
+    "ui-test:build": "node ui-tests/build.mjs",
+    "make-exec": "node scripts/make-exec.mjs",
+    "clean": "node scripts/clean.mjs",
+    "all-tests": "node scripts/run-tests.mjs",
+    "docker-tests": "node scripts/docker-test-all.mjs"
   },
   "devDependencies": {
     "typescript": "5.9.3"

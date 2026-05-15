@@ -3,6 +3,7 @@ import type { FileBrowser } from './FileBrowser.js';
 import type { Highlighter } from '../highlight/Highlighter.js';
 import { THEME } from '../highlight/tokens.js';
 import type { DrawContext } from '../terminal/ScreenBuffer.js';
+import { displayPath } from '../utils/displayPath.js';
 
 export type EditorMode = 'edit' | 'filebrowser' | 'search' | 'jstransform';
 
@@ -42,7 +43,7 @@ export function renderStatusBar(
   const pane = layout.panes[layout.activePaneIndex];
   const buf = pane?.buffer;
 
-  const fileName = buf ? (buf.filePath ?? '[No Name]') : '[No File]';
+  const fileName = buf ? displayPath(buf.filePath ?? '[No Name]') : '[No File]';
   const modifiedTag = buf?.modified ? ' MODIFIED' : '';
   const readonlyTag = buf?.readOnly ? ' READONLY' : '';
   const langName = buf ? highlighter.languageName(buf) : '';

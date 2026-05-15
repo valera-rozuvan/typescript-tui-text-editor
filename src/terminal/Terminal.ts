@@ -1,3 +1,19 @@
+// Module-level resize dispatch — exactly one listener on process.stdout and one
+// on SIGWINCH regardless of how many Terminal instances exist.  This prevents
+// the MaxListeners warning when tests (or other code) create multiple instances.
+const _instances = new Set<Terminal>();
+let _resizeListenersInstalled = false;
+
+function _installResizeListeners(): void {
+  if (_resizeListenersInstalled) return;
+  _resizeListenersInstalled = true;
+  const dispatch = () => {
+    for (const t of _instances) t._onResize();
+  };
+  process.on('SIGWINCH', dispatch);          // POSIX
+  process.stdout.on('resize', dispatch);     // Windows + POSIX (Node.js v12+)
+}
+
 export class Terminal {
   private _width = 80;
   private _height = 24;
@@ -6,15 +22,23 @@ export class Terminal {
 
   constructor() {
     this._updateSize();
-    process.on('SIGWINCH', () => {
-      this._updateSize();
-      for (const cb of this._resizeCallbacks) cb();
-    });
+    _instances.add(this);
+    _installResizeListeners();
+  }
+
+  /** Called by the module-level resize dispatcher. Not part of the public API. */
+  _onResize(): void {
+    this._updateSize();
+    for (const cb of this._resizeCallbacks) cb();
   }
 
   private _updateSize(): void {
-    this._width = process.stdout.columns ?? 80;
-    this._height = process.stdout.rows ?? 24;
+    const envCols = parseInt(process.env['COLUMNS'] ?? '', 10);
+    const envRows = parseInt(process.env['LINES'] ?? '', 10);
+    this._width  = process.stdout.columns
+      ?? (Number.isFinite(envCols) && envCols > 0 ? envCols : 80);
+    this._height = process.stdout.rows
+      ?? (Number.isFinite(envRows) && envRows > 0 ? envRows : 24);
   }
 
   get width(): number { return this._width; }
