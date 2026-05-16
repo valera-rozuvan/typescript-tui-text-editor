@@ -21,6 +21,8 @@ A TUI text editor in TypeScript targeting Node v22, using raw terminal I/O and A
 src/
   globals.d.ts          — ambient Node.js type declarations (no @types/node)
   index.ts              — entry point
+  util.ts               — pure stateless utilities: fitStr, expandTabs, clampScroll, sortByScore,
+                          getIndent, getIndentLength, deleteCharBefore, insertNewlineWithIndent
   terminal/
     Terminal.ts         — ANSI helpers (static), buffered output (append+flush), resize events
     Input.ts            — raw Uint8Array → KeyEvent[] parser (CSI, SS3, UTF-8, Ctrl+*)
@@ -51,7 +53,9 @@ src/
                           invalidateFrom(line) on edit purges chunks + downstream checkpoints
     Highlighter.ts      — language detection by extension, WeakMap caches per Buffer
     languages/          — javascript.ts, typescript.ts (extends JS), c.ts, cpp.ts (extends C),
-                          markdown.ts, html.ts, css.ts
+                          markdown.ts, html.ts, css.ts;
+                          util.ts — shared tokenizer helpers: push, scanBlockComment,
+                          scanLineComment, scanStringLiteral, scanIdentifierContext, scanNumber
   search/
     FuzzyMatcher.ts     — subsequence fuzzy match with consecutive/word-boundary scoring
     FileSearch.ts       — fuzzy search across open buffers
@@ -138,7 +142,7 @@ Tab characters use **fixed-width expansion**: every `\t` always expands to exact
 The constant lives in `src/constants.ts` and is imported wherever tabs are rendered:
 
 - `DrawContext.write()` in `src/terminal/ScreenBuffer.ts` — expands `\t` to `TAB_CHAR_COUNT` spaces when writing cells into the virtual screen buffer.
-- `expandTabsFromCol()` in `src/terminal/Renderer.ts` — same rule for search-panel snippet display.
+- `expandTabs()` in `src/util.ts` — same rule for search-panel snippet display (called from `Renderer.ts`).
 - `TerminalScreen.feed()` in `ui-tests/tests/TerminalScreen.ts` — same rule in the PTY output parser used by UI tests.
 
 The UI test suite `tab_navigation` verifies this behaviour end-to-end: it reads the raw PTY screen content and asserts that every tab-expanded region is exactly `TAB_CHAR_COUNT` space characters wide.

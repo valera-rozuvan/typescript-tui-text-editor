@@ -1,4 +1,5 @@
 import type { Tokenizer, TokenizerState, LineTokens, Token, TokenType } from '../tokens.js';
+import { push } from './util.js';
 
 export const mdTokenizer: Tokenizer = {
   tokenizeLine(line: string, state: TokenizerState): { tokens: LineTokens; nextState: TokenizerState } {
@@ -117,7 +118,3 @@ export const mdTokenizer: Tokenizer = {
     return { tokens, nextState: st };
   },
 };
-
-function push(tokens: Token[], type: TokenType, start: number, length: number): void {
-  if (length > 0) tokens.push({ type, start, length });
-}

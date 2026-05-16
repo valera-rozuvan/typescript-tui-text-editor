@@ -11,7 +11,7 @@ import type { EditorMode } from '../ui/StatusBar.js';
 import { renderStatusBar } from '../ui/StatusBar.js';
 import { THEME, tokenColor } from '../highlight/tokens.js';
 import type { LineTokens } from '../highlight/tokens.js';
-import { TAB_CHAR_COUNT } from '../constants.js';
+import { fitStr, expandTabs } from '../util.js';
 import { basename } from 'path';
 
 export class Renderer {
@@ -90,18 +90,13 @@ export class Renderer {
     // Position the hardware cursor inside the active modal; otherwise keep it hidden
     // (the editor pane uses a software-rendered blinking cursor instead).
     if (searchPanel.active) {
-      const panelW   = Math.min(W - 4, 90);
-      const panelX   = Math.floor((W - panelW) / 2);
-      const panelY   = Math.floor(H * 0.15);
+      const { panelW, panelX, panelY } = this._searchPanelGeometry(W, H);
       const inputRow = panelY + 2;
       const inputCol = panelX + 2 + searchPanel.needle.length;
       out += Terminal.moveTo(inputRow + 1, inputCol + 1);
       out += Terminal.showCursor;
     } else if (jsTransformPanel.active) {
-      const panelW    = Math.min(W - 4, 90);
-      const panelX    = Math.floor((W - panelW) / 2);
-      const panelY    = Math.floor(H * 0.1);
-      const panelH    = Math.min(Math.floor(H * 0.8), 35);
+      const { panelW, panelX, panelY, panelH } = this._jsTransformPanelGeometry(W, H);
       const codeH     = panelH - 4; // rows 0=title, 1=sep, 2..panelH-3=code, panelH-2=sep, panelH-1=footer
       jsTransformPanel.adjustScroll(codeH);
       const visRow    = jsTransformPanel.cursorLine - jsTransformPanel.scrollLine;
@@ -204,9 +199,7 @@ export class Renderer {
 
     // Title bar (row 0 of the pane).
     ctx.moveTo(y, x);
-    ctx.setBg(isActive ? THEME.titleActiveBg : THEME.titleInactiveBg);
-    ctx.setFg(isActive ? THEME.titleActiveFg : THEME.titleInactiveFg);
-    if (isActive) ctx.setBold(true);
+    this._applyTitleStyle(ctx, isActive);
 
     const name = pane.buffer
       ? ` ${pane.buffer.filePath ?? pane.buffer.name}${pane.buffer.modified ? ' ●' : ''} `
@@ -365,9 +358,7 @@ export class Renderer {
 
     // Title
     ctx.moveTo(y, x);
-    ctx.setBg(isActive ? THEME.titleActiveBg : THEME.titleInactiveBg);
-    ctx.setFg(isActive ? THEME.titleActiveFg : THEME.titleInactiveFg);
-    if (isActive) ctx.setBold(true);
+    this._applyTitleStyle(ctx, isActive);
     ctx.write(fitStr(' Files', w));
     ctx.reset();
 
@@ -408,10 +399,7 @@ export class Renderer {
   private _renderSearchPanel(sp: SearchPanel, W: number, H: number): void {
     const ctx = this._ctx;
 
-    const panelH = Math.min(Math.floor(H * 0.7), 30);
-    const panelW = Math.min(W - 4, 90);
-    const panelX = Math.floor((W - panelW) / 2);
-    const panelY = Math.floor(H * 0.15);
+    const { panelH, panelW, panelX, panelY } = this._searchPanelGeometry(W, H);
 
     // Background fill
     ctx.setBg(THEME.surface0);
@@ -478,8 +466,7 @@ export class Renderer {
           const loc     = `${basename(path)}:${lineNo}`;
           // Snippet starts at visual col panelX + 1 (space) + loc.length + 2 (separator).
           // Pre-expand tabs from that col so slice/fitStr work in visual-width units.
-          const snippetStartCol = panelX + loc.length + 3;
-          const expandedSnippet = expandTabsFromCol(result.snippet.trimStart(), snippetStartCol);
+          const expandedSnippet = expandTabs(result.snippet.trimStart());
           const snippet = expandedSnippet.slice(0, panelW - loc.length - 4);
           const entry   = ` ${loc}  ${snippet}`;
           ctx.write(fitStr(entry, panelW));
@@ -507,10 +494,7 @@ export class Renderer {
   private _renderJsTransformPanel(jp: JsTransformPanel, W: number, H: number): void {
     const ctx = this._ctx;
 
-    const panelH = Math.min(Math.floor(H * 0.8), 35);
-    const panelW = Math.min(W - 4, 90);
-    const panelX = Math.floor((W - panelW) / 2);
-    const panelY = Math.floor(H * 0.1);
+    const { panelH, panelW, panelX, panelY } = this._jsTransformPanelGeometry(W, H);
 
     // Background fill
     ctx.setBg(THEME.surface0);
@@ -571,28 +555,32 @@ export class Renderer {
     ctx.write(fitStr('  Alt+J: Run & Close    Alt+C: Cancel', panelW));
     ctx.reset();
   }
-}
+  // ── private helpers ──────────────────────────────────────────────────────
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-/** Expand tab characters in `text` to spaces using TAB_CHAR_COUNT-column stops,
- *  starting from the given absolute screen column `startCol`. */
-function expandTabsFromCol(text: string, _startCol: number): string {
-  let out = '';
-  for (const ch of text) {
-    if (ch === '\t') {
-      out += ' '.repeat(TAB_CHAR_COUNT);
-    } else {
-      out += ch;
-    }
+  private _applyTitleStyle(ctx: DrawContext, isActive: boolean): void {
+    ctx.setBg(isActive ? THEME.titleActiveBg : THEME.titleInactiveBg);
+    ctx.setFg(isActive ? THEME.titleActiveFg : THEME.titleInactiveFg);
+    if (isActive) ctx.setBold(true);
   }
-  return out;
+
+  private _searchPanelGeometry(W: number, H: number): { panelH: number; panelW: number; panelX: number; panelY: number } {
+    const panelH = Math.min(Math.floor(H * 0.7), 30);
+    const panelW = Math.min(W - 4, 90);
+    const panelX = Math.floor((W - panelW) / 2);
+    const panelY = Math.floor(H * 0.15);
+    return { panelH, panelW, panelX, panelY };
+  }
+
+  private _jsTransformPanelGeometry(W: number, H: number): { panelH: number; panelW: number; panelX: number; panelY: number } {
+    const panelH = Math.min(Math.floor(H * 0.8), 35);
+    const panelW = Math.min(W - 4, 90);
+    const panelX = Math.floor((W - panelW) / 2);
+    const panelY = Math.floor(H * 0.1);
+    return { panelH, panelW, panelX, panelY };
+  }
 }
 
-function fitStr(s: string, width: number): string {
-  if (s.length >= width) return s.slice(0, width);
-  return s.padEnd(width);
-}
+// ── module-level helpers ──────────────────────────────────────────────────────
 
 function rgbEqual(a: RGB | null, b: RGB | null): boolean {
   if (a === null || b === null) return a === b;

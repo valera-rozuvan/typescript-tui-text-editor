@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync, existsSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { homedir } from 'os';
 import { fuzzyMatch } from './FuzzyMatcher.js';
+import { sortByScore } from '../util.js';
 
 export interface ProjectSearchResult {
   filePath: string;
@@ -110,7 +111,7 @@ export async function searchProject(
     fileCount++;
     // Yield to the event loop every 20 files to keep the UI responsive
     if (fileCount % 20 === 0) {
-      results.sort((a, b) => b.score - a.score);
+      sortByScore(results);
       onResults([...results]);
       await new Promise<void>(resolve => setTimeout(() => resolve(), 0));
     }

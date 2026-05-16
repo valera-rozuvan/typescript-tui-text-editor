@@ -1,5 +1,6 @@
 import type { Buffer } from '../editor/Buffer.js';
 import { fuzzyMatch } from './FuzzyMatcher.js';
+import { sortByScore } from '../util.js';
 
 export interface FileSearchResult {
   buffer: Buffer;
@@ -32,7 +33,7 @@ export function searchInBuffer(needle: string, buf: Buffer): FileSearchResult[] 
     }
   }
 
-  results.sort((a, b) => b.score - a.score);
+  sortByScore(results);
   return results;
 }
 
@@ -41,6 +42,6 @@ export function searchInBuffers(needle: string, buffers: Buffer[]): FileSearchRe
   for (const buf of buffers) {
     results.push(...searchInBuffer(needle, buf));
   }
-  results.sort((a, b) => b.score - a.score);
+  sortByScore(results);
   return results;
 }

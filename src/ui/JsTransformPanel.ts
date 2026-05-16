@@ -1,3 +1,5 @@
+import { clampScroll, insertNewlineWithIndent, deleteCharBefore } from '../util.js';
+
 export class JsTransformPanel {
   active = false;
   lines: string[] = [];
@@ -34,29 +36,15 @@ export class JsTransformPanel {
   }
 
   insertNewline(): void {
-    const line = this.lines[this.cursorLine];
-    const before = line.slice(0, this.cursorCol);
-    const after = line.slice(this.cursorCol);
-    const indent = line.match(/^(\s*)/)?.[1] ?? '';
-    this.lines[this.cursorLine] = before;
-    this.lines.splice(this.cursorLine + 1, 0, indent + after);
-    this.cursorLine += 1;
-    this.cursorCol = indent.length;
+    const pos = insertNewlineWithIndent(this.lines, this.cursorLine, this.cursorCol);
+    this.cursorLine = pos.line;
+    this.cursorCol = pos.col;
   }
 
   deleteCharBefore(): void {
-    if (this.cursorCol > 0) {
-      const line = this.lines[this.cursorLine];
-      this.lines[this.cursorLine] = line.slice(0, this.cursorCol - 1) + line.slice(this.cursorCol);
-      this.cursorCol -= 1;
-    } else if (this.cursorLine > 0) {
-      const prevLine = this.lines[this.cursorLine - 1];
-      const curLine = this.lines[this.cursorLine];
-      this.lines[this.cursorLine - 1] = prevLine + curLine;
-      this.lines.splice(this.cursorLine, 1);
-      this.cursorLine -= 1;
-      this.cursorCol = prevLine.length;
-    }
+    const pos = deleteCharBefore(this.lines, this.cursorLine, this.cursorCol);
+    this.cursorLine = pos.line;
+    this.cursorCol = pos.col;
   }
 
   moveUp(): void {
@@ -107,12 +95,6 @@ export class JsTransformPanel {
   }
 
   adjustScroll(visibleHeight: number): void {
-    if (visibleHeight <= 0) return;
-    if (this.cursorLine < this.scrollLine) {
-      this.scrollLine = this.cursorLine;
-    }
-    if (this.cursorLine >= this.scrollLine + visibleHeight) {
-      this.scrollLine = this.cursorLine - visibleHeight + 1;
-    }
+    this.scrollLine = clampScroll(this.cursorLine, this.scrollLine, visibleHeight);
   }
 }

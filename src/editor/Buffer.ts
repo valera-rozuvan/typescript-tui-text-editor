@@ -1,6 +1,7 @@
 import { writeFile, mkdir, stat } from 'fs/promises';
 import { openSync, readSync, closeSync } from 'fs';
 import { basename, dirname } from 'path';
+import { getIndentLength, deleteCharBefore as utilDeleteCharBefore, insertNewlineWithIndent } from '../util.js';
 
 const LAZY_THRESHOLD = 5000; // lines: files below this are loaded eagerly
 const CACHE_SIZE = 2000;     // max LRU line cache entries for lazy buffers
@@ -177,37 +178,20 @@ export class Buffer {
 
   deleteCharBefore(line: number, col: number): { line: number; col: number } {
     if (!this._fullyLoaded) this._materializeSync();
-    if (col > 0) {
-      const l = this._lines[line];
-      this._lines[line] = l.slice(0, col - 1) + l.slice(col);
-      this.modified = true;
-      return { line, col: col - 1 };
-    } else if (line > 0) {
-      const prev = this._lines[line - 1];
-      const cur = this._lines[line];
-      const newCol = prev.length;
-      this._lines[line - 1] = prev + cur;
-      this._lines.splice(line, 1);
-      this.modified = true;
-      return { line: line - 1, col: newCol };
-    }
-    return { line, col };
+    const result = utilDeleteCharBefore(this._lines, line, col);
+    if (result.line !== line || result.col !== col) this.modified = true;
+    return result;
   }
 
   insertNewline(line: number, col: number): void {
     if (!this._fullyLoaded) this._materializeSync();
     if (line >= this._lines.length) return;
-    const l = this._lines[line];
-    const indent = l.match(/^(\s*)/)?.[1] ?? '';
-    const after = l.slice(col);
-    this._lines[line] = l.slice(0, col);
-    this._lines.splice(line + 1, 0, indent + after);
+    insertNewlineWithIndent(this._lines, line, col);
     this.modified = true;
   }
 
   indentAt(line: number): number {
-    const l = this.getLine(line);
-    return l.match(/^(\s*)/)?.[1].length ?? 0;
+    return getIndentLength(this.getLine(line));
   }
 
   // ── serialisation ────────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import type { Tokenizer, TokenizerState, LineTokens, Token, TokenType } from '../tokens.js';
+import { push } from './util.js';
 
 export const htmlTokenizer: Tokenizer = {
   tokenizeLine(line: string, state: TokenizerState): { tokens: LineTokens; nextState: TokenizerState } {
@@ -60,7 +61,7 @@ export const htmlTokenizer: Tokenizer = {
             if (line[i] === '=') {
               push(tokens, 'operator', i, 1);
               i++;
-              // Attribute value
+              // Attribute value (no backslash escape handling — HTML doesn't escape quotes this way)
               if (line[i] === '"' || line[i] === "'") {
                 const q = line[i];
                 let j2 = i + 1;
@@ -108,7 +109,3 @@ export const htmlTokenizer: Tokenizer = {
     return { tokens, nextState: st };
   },
 };
-
-function push(tokens: Token[], type: TokenType, start: number, length: number): void {
-  if (length > 0) tokens.push({ type, start, length });
-}

@@ -6,6 +6,7 @@ import type { KeyEvent } from '../terminal/Input.js';
 import { Renderer } from '../terminal/Renderer.js';
 import { Buffer } from './Buffer.js';
 import { Layout } from '../ui/Layout.js';
+import type { Pane } from '../ui/Pane.js';
 import { FileBrowser } from '../ui/FileBrowser.js';
 import { SearchPanel } from '../ui/SearchPanel.js';
 import { JsTransformPanel } from '../ui/JsTransformPanel.js';
@@ -48,30 +49,32 @@ export class Editor {
   async openFile(filePath: string): Promise<void> {
     const absPath = resolve(filePath);
     const buf = await Buffer.fromFile(absPath);
-    this.highlighter.onFilePathChange(buf);
-    this._registerBuffer(buf);
-    this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
-    const pane = this.layout.activePane;
-    pane.buffer = buf;
-    pane.cursor.setPos(0, 0);
-    pane.scrollLine = 0;
-    pane.scrollCol = 0;
+    this._loadBufferIntoPane(buf, this.layout.activePane);
   }
 
   openBuffer(buf: Buffer): void {
     this._registerBuffer(buf);
-    const pane = this.layout.activePane;
-    pane.buffer = buf;
-    pane.cursor.setPos(0, 0);
-    pane.scrollLine = 0;
-    pane.scrollCol = 0;
+    this._loadBufferIntoPane(buf, this.layout.activePane);
   }
 
   private _registerBuffer(buf: Buffer): void {
     if (!this.openBuffers.includes(buf)) {
       this.openBuffers.push(buf);
-      this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
     }
+  }
+
+  private _resetPane(pane: Pane): void {
+    pane.cursor.setPos(0, 0);
+    pane.scrollLine = 0;
+    pane.scrollCol = 0;
+  }
+
+  private _loadBufferIntoPane(buf: Buffer, pane: Pane): void {
+    this.highlighter.onFilePathChange(buf);
+    this._registerBuffer(buf);
+    this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
+    pane.buffer = buf;
+    this._resetPane(pane);
   }
 
   private _cycleBuffer(direction: 1 | -1): void {
@@ -102,9 +105,7 @@ export class Editor {
       pane.scrollLine = saved.scrollLine;
       pane.scrollCol = saved.scrollCol;
     } else {
-      pane.cursor.setPos(0, 0);
-      pane.scrollLine = 0;
-      pane.scrollCol = 0;
+      this._resetPane(pane);
     }
   }
 
@@ -409,13 +410,7 @@ export class Editor {
           this.layout.browserFocused = false;
           this.mode = 'edit';
           Buffer.fromFile(sel.fullPath).then(buf => {
-            this.highlighter.onFilePathChange(buf);
-            this._registerBuffer(buf);
-            this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
-            targetPane.buffer = buf;
-            targetPane.cursor.setPos(0, 0);
-            targetPane.scrollLine = 0;
-            targetPane.scrollCol = 0;
+            this._loadBufferIntoPane(buf, targetPane);
             this.render();
           }).catch(err => {
             this.showMessage(`Error opening: ${err.message}`);
@@ -540,12 +535,8 @@ export class Editor {
       // Capture the target pane now; activePane may change before the async load completes.
       const targetPane = this.layout.activePane;
       Buffer.fromFile(projResult.filePath).then(buf => {
-        this.highlighter.onFilePathChange(buf);
-        this._registerBuffer(buf);
-        this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
-        targetPane.buffer = buf;
+        this._loadBufferIntoPane(buf, targetPane);
         targetPane.cursor.setPos(projResult.line, projResult.col);
-        targetPane.scrollLine = 0;
         targetPane.centerOnCursor();
         this.render();
       }).catch(() => {});
@@ -624,9 +615,7 @@ export class Editor {
     }
     const closedBuf = pane.buffer;
     pane.buffer = null;
-    pane.cursor.setPos(0, 0);
-    pane.scrollLine = 0;
-    pane.scrollCol = 0;
+    this._resetPane(pane);
     // Remove from the open-buffer list if no other pane is showing it.
     if (closedBuf && !this.layout.panes.some(p => p.buffer === closedBuf)) {
       const bIdx = this.openBuffers.indexOf(closedBuf);

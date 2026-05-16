@@ -1,4 +1,5 @@
 import type { Tokenizer, TokenizerState, LineTokens, Token, TokenType } from '../tokens.js';
+import { push, scanBlockComment, scanLineComment, scanStringLiteral, scanIdentifierContext, scanNumber } from './util.js';
 
 const KEYWORDS = new Set([
   'break','case','catch','class','const','continue','debugger','default',
@@ -24,15 +25,7 @@ export const jsTokenizer: Tokenizer = {
     while (i < line.length) {
       // Continuing block comment
       if (st.inBlockComment) {
-        const end = line.indexOf('*/', i);
-        if (end === -1) {
-          push(tokens, 'comment', i, line.length - i);
-          i = line.length;
-        } else {
-          push(tokens, 'comment', i, end + 2 - i);
-          i = end + 2;
-          st.inBlockComment = false;
-        }
+        i = scanBlockComment(line, i, tokens, st);
         continue;
       }
 
@@ -56,8 +49,7 @@ export const jsTokenizer: Tokenizer = {
 
       // Line comment
       if (line[i] === '/' && line[i + 1] === '/') {
-        push(tokens, 'comment', i, line.length - i);
-        i = line.length;
+        i = scanLineComment(line, i, tokens);
         continue;
       }
 
@@ -97,42 +89,22 @@ export const jsTokenizer: Tokenizer = {
 
       // Regular string literals
       if (line[i] === '"' || line[i] === "'") {
-        const quote = line[i];
-        let j = i + 1;
-        while (j < line.length && line[j] !== quote) {
-          if (line[j] === '\\') j++;
-          j++;
-        }
-        if (j < line.length) j++;
-        push(tokens, 'string', i, j - i);
-        i = j;
+        i = scanStringLiteral(line, i, tokens, line[i]);
         continue;
       }
 
       // Numbers
       if (isDigit(line[i]) || (line[i] === '.' && isDigit(line[i + 1] ?? ''))) {
         let j = i;
-        if (line[j] === '0' && (line[j + 1] === 'x' || line[j + 1] === 'X')) {
-          j += 2;
-          while (j < line.length && /[0-9a-fA-F_]/.test(line[j])) j++;
-        } else if (line[j] === '0' && (line[j + 1] === 'b' || line[j + 1] === 'B')) {
+        if (line[j] === '0' && (line[j + 1] === 'b' || line[j + 1] === 'B')) {
           j += 2;
           while (j < line.length && /[01_]/.test(line[j])) j++;
         } else if (line[j] === '0' && (line[j + 1] === 'o' || line[j + 1] === 'O')) {
           j += 2;
           while (j < line.length && /[0-7_]/.test(line[j])) j++;
         } else {
-          while (j < line.length && /[0-9_]/.test(line[j])) j++;
-          if (j < line.length && line[j] === '.') {
-            j++;
-            while (j < line.length && /[0-9_]/.test(line[j])) j++;
-          }
-          if (j < line.length && /[eE]/.test(line[j])) {
-            j++;
-            if (j < line.length && /[+-]/.test(line[j])) j++;
-            while (j < line.length && /[0-9_]/.test(line[j])) j++;
-          }
-          if (j < line.length && line[j] === 'n') j++;
+          j = scanNumber(line, i, true);
+          if (j < line.length && line[j] === 'n') j++; // bigint suffix
         }
         push(tokens, 'number', i, j - i);
         i = j;
@@ -145,17 +117,7 @@ export const jsTokenizer: Tokenizer = {
         while (j < line.length && isIdentCont(line[j])) j++;
         const word = line.slice(i, j);
 
-        // Skip whitespace to check for '('
-        let k = j;
-        while (k < line.length && line[k] === ' ') k++;
-        const isCall = line[k] === '(';
-
-        // Check prior non-space char
-        let prevNonSpace = '';
-        for (let p = i - 1; p >= 0; p--) {
-          if (line[p] !== ' ' && line[p] !== '\t') { prevNonSpace = line[p]; break; }
-        }
-        const afterDot = prevNonSpace === '.';
+        const { isCall, afterDot } = scanIdentifierContext(line, i, j);
 
         let type: TokenType;
         if (KEYWORDS.has(word)) {
@@ -204,10 +166,6 @@ export const jsTokenizer: Tokenizer = {
     return { tokens, nextState: st };
   },
 };
-
-function push(tokens: Token[], type: TokenType, start: number, length: number): void {
-  if (length > 0) tokens.push({ type, start, length });
-}
 
 function isDigit(c: string): boolean { return c >= '0' && c <= '9'; }
 function isIdentStart(c: string): boolean { return /[a-zA-Z_$]/.test(c); }

@@ -1,6 +1,7 @@
 import type { FileSearchResult } from '../search/FileSearch.js';
 import type { ProjectSearchResult } from '../search/ProjectSearch.js';
 import { displayPath } from '../utils/displayPath.js';
+import { clampScroll } from '../util.js';
 
 export type SearchMode = 'file' | 'project';
 
@@ -20,8 +21,7 @@ export class SearchPanel {
     this.mode = mode;
     this.needle = '';
     this.results = [];
-    this.selectedIndex = 0;
-    this.scrollOffset = 0;
+    this._resetSelection();
     this.loading = false;
   }
 
@@ -32,20 +32,17 @@ export class SearchPanel {
 
   appendChar(ch: string): void {
     this.needle += ch;
-    this.selectedIndex = 0;
-    this.scrollOffset = 0;
+    this._resetSelection();
   }
 
   deleteChar(): void {
     this.needle = this.needle.slice(0, -1);
-    this.selectedIndex = 0;
-    this.scrollOffset = 0;
+    this._resetSelection();
   }
 
   setResults(results: SearchResult[]): void {
     this.results = results;
-    this.selectedIndex = 0;
-    this.scrollOffset = 0;
+    this._resetSelection();
     this.loading = false;
   }
 
@@ -70,13 +67,12 @@ export class SearchPanel {
   }
 
   adjustScroll(visibleHeight: number): void {
-    if (visibleHeight <= 0) return;
-    if (this.selectedIndex < this.scrollOffset) {
-      this.scrollOffset = this.selectedIndex;
-    }
-    if (this.selectedIndex >= this.scrollOffset + visibleHeight) {
-      this.scrollOffset = this.selectedIndex - visibleHeight + 1;
-    }
+    this.scrollOffset = clampScroll(this.selectedIndex, this.scrollOffset, visibleHeight);
+  }
+
+  private _resetSelection(): void {
+    this.selectedIndex = 0;
+    this.scrollOffset = 0;
   }
 
   getResultPath(result: SearchResult): string {

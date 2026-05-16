@@ -1,5 +1,6 @@
 import { readdirSync, statSync } from 'fs';
 import { join, dirname, resolve } from 'path';
+import { clampScroll } from '../util.js';
 
 export interface DirEntry {
   name: string;
@@ -69,13 +70,7 @@ export class FileBrowser {
   }
 
   adjustScroll(visibleHeight: number): void {
-    if (visibleHeight <= 0) return;
-    if (this.selectedIndex < this.scrollOffset) {
-      this.scrollOffset = this.selectedIndex;
-    }
-    if (this.selectedIndex >= this.scrollOffset + visibleHeight) {
-      this.scrollOffset = this.selectedIndex - visibleHeight + 1;
-    }
+    this.scrollOffset = clampScroll(this.selectedIndex, this.scrollOffset, visibleHeight);
   }
 
   navigateInto(): boolean {

@@ -1,4 +1,5 @@
 import type { Tokenizer, TokenizerState, LineTokens, Token, TokenType } from '../tokens.js';
+import { push, scanBlockComment, scanStringLiteral } from './util.js';
 
 const CSS_PROPS = new Set([
   'align-items','align-content','align-self','animation','background',
@@ -18,14 +19,8 @@ export const cssTokenizer: Tokenizer = {
     let i = 0;
 
     if (st.inBlockComment) {
-      const end = line.indexOf('*/', i);
-      if (end === -1) {
-        push(tokens, 'comment', 0, line.length);
-        return { tokens, nextState: st };
-      }
-      push(tokens, 'comment', 0, end + 2);
-      i = end + 2;
-      st.inBlockComment = false;
+      i = scanBlockComment(line, 0, tokens, st);
+      if (i >= line.length) return { tokens, nextState: st };
     }
 
     while (i < line.length) {
@@ -54,15 +49,7 @@ export const cssTokenizer: Tokenizer = {
 
       // Strings
       if (line[i] === '"' || line[i] === "'") {
-        const q = line[i];
-        let j = i + 1;
-        while (j < line.length && line[j] !== q) {
-          if (line[j] === '\\') j++;
-          j++;
-        }
-        if (j < line.length) j++;
-        push(tokens, 'string', i, j - i);
-        i = j;
+        i = scanStringLiteral(line, i, tokens, line[i]);
         continue;
       }
 
@@ -133,7 +120,3 @@ export const cssTokenizer: Tokenizer = {
     return { tokens, nextState: st };
   },
 };
-
-function push(tokens: Token[], type: TokenType, start: number, length: number): void {
-  if (length > 0) tokens.push({ type, start, length });
-}

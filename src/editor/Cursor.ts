@@ -1,4 +1,5 @@
 import { Buffer } from './Buffer.js';
+import { getIndentLength } from '../util.js';
 
 export class Cursor {
   line = 0;
@@ -52,8 +53,7 @@ export class Cursor {
   }
 
   moveToFirstNonSpace(buf: Buffer): void {
-    const l = buf.getLine(this.line);
-    this.col = l.match(/^\s*/)?.[0].length ?? 0;
+    this.col = getIndentLength(buf.getLine(this.line));
     this.desiredCol = this.col;
   }
 
