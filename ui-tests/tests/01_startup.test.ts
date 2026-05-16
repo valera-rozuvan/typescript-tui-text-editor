@@ -8,7 +8,8 @@
  *  - Opening a file shows its name in the title bar and its content on screen
  */
 import type { TestCase } from './types.js';
-import { EditorTest, KEY, createTempDir, createTempFile, removeTempDir } from './helpers.js';
+import { join } from 'node:path';
+import { EditorTest, KEY, copyFixtureToTemp, removeTempDir } from './helpers.js';
 
 export const suite = 'startup';
 
@@ -70,10 +71,10 @@ export const tests: TestCase[] = [
   {
     name: 'opening a file shows its name in the title bar',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('01_startup');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'hello.txt', 'greeting\n');
+        const file = join(dir, 'hello.txt');
         await t.start([file]);
         t.assertLineContains(0, 'hello.txt');
       } finally {
@@ -86,10 +87,10 @@ export const tests: TestCase[] = [
   {
     name: 'opening a file shows its content on screen',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('01_startup');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'content.txt', 'unique_file_content_7x3\n');
+        const file = join(dir, 'content.txt');
         await t.start([file]);
         t.assertContains('unique_file_content_7x3');
       } finally {
@@ -102,10 +103,10 @@ export const tests: TestCase[] = [
   {
     name: 'file name appears in the status bar after opening',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('01_startup');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'status_check.txt', 'data\n');
+        const file = join(dir, 'status_check.txt');
         await t.start([file]);
         t.assertStatusContains('status_check.txt');
       } finally {
@@ -118,10 +119,10 @@ export const tests: TestCase[] = [
   {
     name: 'status bar shows cursor position 1:1 after opening a file',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('01_startup');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'pos.txt', 'abc\n');
+        const file = join(dir, 'pos.txt');
         await t.start([file]);
         /* Cursor starts at line 0, col 0 → displayed as 1:1 */
         t.assertStatusContains('1:1');

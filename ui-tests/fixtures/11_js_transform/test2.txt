@@ -1,0 +1,10 @@
+  leading spaces
+trailing spaces  
+    four leading spaces
+no extra spaces here
+  both ends  
+middle content
+   three leading
+ends with one space 
+plain line nine
+plain line ten

@@ -20,21 +20,19 @@
  *  - After Tab, status bar shows the language name
  */
 import type { TestCase } from './types.js';
+import { join } from 'node:path';
 import {
   EditorTest, KEY,
-  createTempDir, createTempFile, removeTempDir,
+  copyFixtureToTemp, removeTempDir,
 } from './helpers.js';
 
 export const suite = 'file_browser';
 
 function setup() {
-  const dir = createTempDir();
-  createTempFile(dir, 'alpha.ts', 'const a = 1;\n');
-  createTempFile(dir, 'beta.ts', 'const b = 2;\n');
-  createTempFile(dir, 'gamma.ts', 'const c = 3;\n');
+  const dir = copyFixtureToTemp('10_file_browser');
   /* Use dir as cwd so FileBrowser starts in the project temp directory */
   const t = new EditorTest(120, 30, dir);
-  const file = dir + '/alpha.ts';
+  const file = join(dir, 'alpha.ts');
   return { dir, t, file };
 }
 

@@ -1,6 +1,6 @@
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync, mkdirSync, copyFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { PtyProcess } from './PtyProcess.js';
 import { TerminalScreen } from './TerminalScreen.js';
@@ -55,6 +55,31 @@ function _describeSeq(seq: string): string {
 
 export function createTempDir(): string {
   return mkdtempSync(join(tmpdir(), 'editor-ui-test-'));
+}
+
+function fixtureDir(suiteName: string): string {
+  return join(_dirname, '../fixtures', suiteName);
+}
+
+function _copyDirSync(src: string, dst: string): void {
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const dstName = entry.name === 'dot_git' ? '.git' : entry.name;
+    const srcPath = join(src, entry.name);
+    const dstPath = join(dst, dstName);
+    if (entry.isDirectory()) {
+      mkdirSync(dstPath, { recursive: true });
+      _copyDirSync(srcPath, dstPath);
+    } else {
+      copyFileSync(srcPath, dstPath);
+    }
+  }
+}
+
+export function copyFixtureToTemp(suiteName: string): string {
+  const src = fixtureDir(suiteName);
+  const dst = createTempDir();
+  _copyDirSync(src, dst);
+  return dst;
 }
 
 export function createTempFile(dir: string, name: string, content = ''): string {

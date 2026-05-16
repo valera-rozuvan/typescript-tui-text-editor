@@ -48,9 +48,10 @@
  *   9. Read the file from disk and assert every line is "//" + original line.
  */
 import type { TestCase } from './types.js';
+import { join } from 'node:path';
 import {
   EditorTest, KEY,
-  createTempDir, createTempFile, readTempFile, removeTempDir,
+  copyFixtureToTemp, readTempFile, removeTempDir,
 } from './helpers.js';
 
 export const suite = 'js_transform';
@@ -94,8 +95,8 @@ export const tests: TestCase[] = [
   {
     name: 'Alt+J opens JS transform modal with default function; Alt+C closes it without modifying the file',
     async fn() {
-      const dir = createTempDir();
-      const file = createTempFile(dir, 'test.txt', FILE_CONTENT);
+      const dir = copyFixtureToTemp('11_js_transform');
+      const file = join(dir, 'test.txt');
       const t = new EditorTest(120, 30, dir);
       try {
         await t.start([file]);
@@ -145,8 +146,8 @@ export const tests: TestCase[] = [
   {
     name: 'running the default transformer leaves every line unchanged, including leading/trailing spaces and line endings',
     async fn() {
-      const dir = createTempDir();
-      const file = createTempFile(dir, 'test2.txt', FILE2_CONTENT);
+      const dir = copyFixtureToTemp('11_js_transform');
+      const file = join(dir, 'test2.txt');
       const t = new EditorTest(120, 30, dir);
       try {
         await t.start([file]);
@@ -205,8 +206,8 @@ export const tests: TestCase[] = [
   {
     name: 'editing the function to prepend "//" transforms every line in the file',
     async fn() {
-      const dir = createTempDir();
-      const file = createTempFile(dir, 'test3.txt', FILE_CONTENT);
+      const dir = copyFixtureToTemp('11_js_transform');
+      const file = join(dir, 'test3.txt');
       const t = new EditorTest(120, 30, dir);
       try {
         await t.start([file]);

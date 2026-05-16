@@ -1,0 +1,10 @@
+	First line
+Second line
+		Nested line
+abcd	After tab
+Fifth line
+	Sixth line
+Seventh line
+		Eighth line
+Ninth line
+	Tenth line

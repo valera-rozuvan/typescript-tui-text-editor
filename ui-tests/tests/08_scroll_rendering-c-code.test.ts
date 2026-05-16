@@ -23,14 +23,13 @@
  *   visible range = [scrollLine, scrollLine + 27]
  *   content cols  = [gutterWidth, COLS) = [5, 120)
  *
- * Fixture: ui-tests/fixtures/exit.c (Linux kernel/exit.c, 2003 lines).
+ * Fixture: ui-tests/fixtures/08_scroll_rendering_c_code/exit.c
  */
 import type { TestCase } from './types.js';
-import { EditorTest, KEY, createTempDir, createTempFile, removeTempDir } from './helpers.js';
-import { TAB_CHAR_COUNT } from './constants.js';
+import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { EditorTest, KEY, copyFixtureToTemp, removeTempDir } from './helpers.js';
+import { TAB_CHAR_COUNT } from './constants.js';
 
 export const suite = 'scroll_rendering_c_code';
 
@@ -40,19 +39,6 @@ const COLS           = 120;
 const ROWS           = 30;
 const CONTENT_HEIGHT = ROWS - 2;   // pane.contentHeight = (ROWS-1) - 1 = 28
 const GUTTER_WIDTH   = 5;          // Math.max(3, len("2003")) + 1
-
-/* ── Fixture ─────────────────────────────────────────────────────────────── */
-
-const _dirname = dirname(fileURLToPath(import.meta.url));
-
-/*
- * Load the fixture once at module evaluation time so the path is resolved
- * relative to the compiled JS file (in ui-tests/dist/).
- */
-const FIXTURE_CONTENT = readFileSync(
-  join(_dirname, '../fixtures/exit.c'),
-  'utf8',
-);
 
 /* ── Tab expansion ───────────────────────────────────────────────────────── */
 
@@ -151,8 +137,10 @@ export const tests: TestCase[] = [
   {
     name: 'diff renderer stays correct while navigating down through Linux kernel exit.c',
     async fn() {
-      const dir         = createTempDir();
+      const dir         = copyFixtureToTemp('08_scroll_rendering_c_code');
       const t           = new EditorTest(COLS, ROWS);
+      const file        = join(dir, 'exit.c');
+      const FIXTURE_CONTENT = readFileSync(file, 'utf8');
 
       /* Split into lines; trim trailing empty element if file ends with '\n'. */
       const sourceLines = FIXTURE_CONTENT.split('\n');
@@ -160,7 +148,6 @@ export const tests: TestCase[] = [
       const numLines = sourceLines.length;
 
       try {
-        const file = createTempFile(dir, 'exit.c', FIXTURE_CONTENT);
         await t.start([file]);
 
         /* ── initial state: cursor on line 1 (0-indexed line 0) ──────── */

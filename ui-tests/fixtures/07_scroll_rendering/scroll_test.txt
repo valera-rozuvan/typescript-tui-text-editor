@@ -1,0 +1,500 @@
+L0001 No word came.
+L0002 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0003 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0004 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0005 The old map showed trails long forgotten by all but the mountain folk here.
+L0006 Frost crept silently across the window glass in the early hours before dawn.
+L0007 Three riders appeared on the horizon moving swiftly toward the small village.
+L0008 Wait here.
+L0009 The bridge had stood for six hundred years and still it held firm and true.
+L0010 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0011 She found the letter tucked inside the hollow of the great silver beech tree.
+L0012 Words carved into the stone door frame had worn away past all possible reading.
+L0013 A narrow boat drifted silently past the reeds at the margin of the wide marsh.
+L0014 The merchant weighed each coin carefully before adding it to his leather purse.
+L0015 Gone now.
+L0016 Stars appeared one by one as the last amber light faded from the western sky.
+L0017 The answer they sought was buried deep in the archives of a forgotten library.
+L0018 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0019 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0020 An iron key hung on a peg beside the door but it opened nothing in this place.
+L0021 The forest grew steadily denser as they descended into the bowl of the valley.
+L0022 Too late.
+L0023 She recognised the seal pressed into the wax but refused to break it just yet.
+L0024 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0025 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0026 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0027 A fire burned low in the grate and cast long shadows across the cold flagstones.
+L0028 The trail ended without warning at the edge of a wide and perfectly silent river.
+L0029 Stand firm.
+L0030 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0031 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0032 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0033 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0034 Dusk turned the surface of the lake into a mirror reflecting all the sky colours.
+L0035 The pass through the mountains was dangerously narrow and strewn with loose shale.
+L0036 Check again.
+L0037 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0038 He left no note behind but the chair by the dying fire was still warm to touch.
+L0039 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0040 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0041 Bells rang in the distant abbey marking the slow passing of another grey hour.
+L0042 A crack in the low ceiling let in a single thread of pale grey dawn light above.
+L0043 Not yet seen.
+L0044 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0045 He had crossed this same river a hundred times but never in such dangerously high water.
+L0046 The faded painting showed a city that none of them had ever visited or even heard named.
+L0047 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0048 Nothing moved on the bare hillside except the slow shadow of one drifting grey cloud.
+L0049 The cellar smelled strongly of dark earth and old wood and something harder to name.
+L0050 No word came.
+L0051 The stone path curved gently through a canopy of ancient oaks toward the pale sky.
+L0052 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0053 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0054 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0055 The old map showed trails long forgotten by all but the mountain folk here.
+L0056 Frost crept silently across the window glass in the early hours before dawn.
+L0057 Wait here.
+L0058 Smoke rose in lazy spirals from the chimneys of a dozen distant farmhouses.
+L0059 The bridge had stood for six hundred years and still it held firm and true.
+L0060 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0061 She found the letter tucked inside the hollow of the great silver beech tree.
+L0062 Words carved into the stone door frame had worn away past all possible reading.
+L0063 A narrow boat drifted silently past the reeds at the margin of the wide marsh.
+L0064 Gone now.
+L0065 Wind swept unbroken through the tall grass of the open plain without any mercy.
+L0066 Stars appeared one by one as the last amber light faded from the western sky.
+L0067 The answer they sought was buried deep in the archives of a forgotten library.
+L0068 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0069 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0070 An iron key hung on a peg beside the door but it opened nothing in this place.
+L0071 Too late.
+L0072 Morning brought clear skies and the distant sound of a waterfall high in hills.
+L0073 She recognised the seal pressed into the wax but refused to break it just yet.
+L0074 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0075 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0076 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0077 A fire burned low in the grate and cast long shadows across the cold flagstones.
+L0078 Stand firm.
+L0079 He counted thirty seven steps from the gate to the well and then abruptly stopped.
+L0080 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0081 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0082 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0083 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0084 Dusk turned the surface of the lake into a mirror reflecting all the sky colours.
+L0085 Check again.
+L0086 A single lamp burned on in the upper window of the otherwise entirely dark tower.
+L0087 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0088 He left no note behind but the chair by the dying fire was still warm to touch.
+L0089 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0090 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0091 Bells rang in the distant abbey marking the slow passing of another grey hour.
+L0092 Not yet seen.
+L0093 The lock was old and desperately stiff but it yielded at last to the correct key.
+L0094 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0095 He had crossed this same river a hundred times but never in such dangerously high water.
+L0096 The faded painting showed a city that none of them had ever visited or even heard named.
+L0097 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0098 Nothing moved on the bare hillside except the slow shadow of one drifting grey cloud.
+L0099 No word came.
+L0100 At the edge of the world the sky turned colours no painter had ever managed to capture.
+L0101 The stone path curved gently through a canopy of ancient oaks toward the pale sky.
+L0102 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0103 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0104 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0105 The old map showed trails long forgotten by all but the mountain folk here.
+L0106 Wait here.
+L0107 Three riders appeared on the horizon moving swiftly toward the small village.
+L0108 Smoke rose in lazy spirals from the chimneys of a dozen distant farmhouses.
+L0109 The bridge had stood for six hundred years and still it held firm and true.
+L0110 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0111 She found the letter tucked inside the hollow of the great silver beech tree.
+L0112 Words carved into the stone door frame had worn away past all possible reading.
+L0113 Gone now.
+L0114 The merchant weighed each coin carefully before adding it to his leather purse.
+L0115 Wind swept unbroken through the tall grass of the open plain without any mercy.
+L0116 Stars appeared one by one as the last amber light faded from the western sky.
+L0117 The answer they sought was buried deep in the archives of a forgotten library.
+L0118 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0119 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0120 Too late.
+L0121 The forest grew steadily denser as they descended into the bowl of the valley.
+L0122 Morning brought clear skies and the distant sound of a waterfall high in hills.
+L0123 She recognised the seal pressed into the wax but refused to break it just yet.
+L0124 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0125 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0126 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0127 Stand firm.
+L0128 The trail ended without warning at the edge of a wide and perfectly silent river.
+L0129 He counted thirty seven steps from the gate to the well and then abruptly stopped.
+L0130 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0131 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0132 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0133 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0134 Check again.
+L0135 The pass through the mountains was dangerously narrow and strewn with loose shale.
+L0136 A single lamp burned on in the upper window of the otherwise entirely dark tower.
+L0137 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0138 He left no note behind but the chair by the dying fire was still warm to touch.
+L0139 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0140 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0141 Not yet seen.
+L0142 A crack in the low ceiling let in a single thread of pale grey dawn light above.
+L0143 The lock was old and desperately stiff but it yielded at last to the correct key.
+L0144 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0145 He had crossed this same river a hundred times but never in such dangerously high water.
+L0146 The faded painting showed a city that none of them had ever visited or even heard named.
+L0147 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0148 No word came.
+L0149 The cellar smelled strongly of dark earth and old wood and something harder to name.
+L0150 At the edge of the world the sky turned colours no painter had ever managed to capture.
+L0151 The stone path curved gently through a canopy of ancient oaks toward the pale sky.
+L0152 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0153 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0154 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0155 Wait here.
+L0156 Frost crept silently across the window glass in the early hours before dawn.
+L0157 Three riders appeared on the horizon moving swiftly toward the small village.
+L0158 Smoke rose in lazy spirals from the chimneys of a dozen distant farmhouses.
+L0159 The bridge had stood for six hundred years and still it held firm and true.
+L0160 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0161 She found the letter tucked inside the hollow of the great silver beech tree.
+L0162 Gone now.
+L0163 A narrow boat drifted silently past the reeds at the margin of the wide marsh.
+L0164 The merchant weighed each coin carefully before adding it to his leather purse.
+L0165 Wind swept unbroken through the tall grass of the open plain without any mercy.
+L0166 Stars appeared one by one as the last amber light faded from the western sky.
+L0167 The answer they sought was buried deep in the archives of a forgotten library.
+L0168 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0169 Too late.
+L0170 An iron key hung on a peg beside the door but it opened nothing in this place.
+L0171 The forest grew steadily denser as they descended into the bowl of the valley.
+L0172 Morning brought clear skies and the distant sound of a waterfall high in hills.
+L0173 She recognised the seal pressed into the wax but refused to break it just yet.
+L0174 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0175 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0176 Stand firm.
+L0177 A fire burned low in the grate and cast long shadows across the cold flagstones.
+L0178 The trail ended without warning at the edge of a wide and perfectly silent river.
+L0179 He counted thirty seven steps from the gate to the well and then abruptly stopped.
+L0180 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0181 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0182 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0183 Check again.
+L0184 Dusk turned the surface of the lake into a mirror reflecting all the sky colours.
+L0185 The pass through the mountains was dangerously narrow and strewn with loose shale.
+L0186 A single lamp burned on in the upper window of the otherwise entirely dark tower.
+L0187 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0188 He left no note behind but the chair by the dying fire was still warm to touch.
+L0189 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0190 Not yet seen.
+L0191 Bells rang in the distant abbey marking the slow passing of another grey hour.
+L0192 A crack in the low ceiling let in a single thread of pale grey dawn light above.
+L0193 The lock was old and desperately stiff but it yielded at last to the correct key.
+L0194 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0195 He had crossed this same river a hundred times but never in such dangerously high water.
+L0196 The faded painting showed a city that none of them had ever visited or even heard named.
+L0197 No word came.
+L0198 Nothing moved on the bare hillside except the slow shadow of one drifting grey cloud.
+L0199 The cellar smelled strongly of dark earth and old wood and something harder to name.
+L0200 At the edge of the world the sky turned colours no painter had ever managed to capture.
+L0201 The stone path curved gently through a canopy of ancient oaks toward the pale sky.
+L0202 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0203 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0204 Wait here.
+L0205 The old map showed trails long forgotten by all but the mountain folk here.
+L0206 Frost crept silently across the window glass in the early hours before dawn.
+L0207 Three riders appeared on the horizon moving swiftly toward the small village.
+L0208 Smoke rose in lazy spirals from the chimneys of a dozen distant farmhouses.
+L0209 The bridge had stood for six hundred years and still it held firm and true.
+L0210 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0211 Gone now.
+L0212 Words carved into the stone door frame had worn away past all possible reading.
+L0213 A narrow boat drifted silently past the reeds at the margin of the wide marsh.
+L0214 The merchant weighed each coin carefully before adding it to his leather purse.
+L0215 Wind swept unbroken through the tall grass of the open plain without any mercy.
+L0216 Stars appeared one by one as the last amber light faded from the western sky.
+L0217 The answer they sought was buried deep in the archives of a forgotten library.
+L0218 Too late.
+L0219 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0220 An iron key hung on a peg beside the door but it opened nothing in this place.
+L0221 The forest grew steadily denser as they descended into the bowl of the valley.
+L0222 Morning brought clear skies and the distant sound of a waterfall high in hills.
+L0223 She recognised the seal pressed into the wax but refused to break it just yet.
+L0224 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0225 Stand firm.
+L0226 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0227 A fire burned low in the grate and cast long shadows across the cold flagstones.
+L0228 The trail ended without warning at the edge of a wide and perfectly silent river.
+L0229 He counted thirty seven steps from the gate to the well and then abruptly stopped.
+L0230 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0231 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0232 Check again.
+L0233 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0234 Dusk turned the surface of the lake into a mirror reflecting all the sky colours.
+L0235 The pass through the mountains was dangerously narrow and strewn with loose shale.
+L0236 A single lamp burned on in the upper window of the otherwise entirely dark tower.
+L0237 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0238 He left no note behind but the chair by the dying fire was still warm to touch.
+L0239 Not yet seen.
+L0240 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0241 Bells rang in the distant abbey marking the slow passing of another grey hour.
+L0242 A crack in the low ceiling let in a single thread of pale grey dawn light above.
+L0243 The lock was old and desperately stiff but it yielded at last to the correct key.
+L0244 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0245 He had crossed this same river a hundred times but never in such dangerously high water.
+L0246 No word came.
+L0247 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0248 Nothing moved on the bare hillside except the slow shadow of one drifting grey cloud.
+L0249 The cellar smelled strongly of dark earth and old wood and something harder to name.
+L0250 At the edge of the world the sky turned colours no painter had ever managed to capture.
+L0251 The stone path curved gently through a canopy of ancient oaks toward the pale sky.
+L0252 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0253 Wait here.
+L0254 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0255 The old map showed trails long forgotten by all but the mountain folk here.
+L0256 Frost crept silently across the window glass in the early hours before dawn.
+L0257 Three riders appeared on the horizon moving swiftly toward the small village.
+L0258 Smoke rose in lazy spirals from the chimneys of a dozen distant farmhouses.
+L0259 The bridge had stood for six hundred years and still it held firm and true.
+L0260 Gone now.
+L0261 She found the letter tucked inside the hollow of the great silver beech tree.
+L0262 Words carved into the stone door frame had worn away past all possible reading.
+L0263 A narrow boat drifted silently past the reeds at the margin of the wide marsh.
+L0264 The merchant weighed each coin carefully before adding it to his leather purse.
+L0265 Wind swept unbroken through the tall grass of the open plain without any mercy.
+L0266 Stars appeared one by one as the last amber light faded from the western sky.
+L0267 Too late.
+L0268 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0269 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0270 An iron key hung on a peg beside the door but it opened nothing in this place.
+L0271 The forest grew steadily denser as they descended into the bowl of the valley.
+L0272 Morning brought clear skies and the distant sound of a waterfall high in hills.
+L0273 She recognised the seal pressed into the wax but refused to break it just yet.
+L0274 Stand firm.
+L0275 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0276 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0277 A fire burned low in the grate and cast long shadows across the cold flagstones.
+L0278 The trail ended without warning at the edge of a wide and perfectly silent river.
+L0279 He counted thirty seven steps from the gate to the well and then abruptly stopped.
+L0280 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0281 Check again.
+L0282 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0283 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0284 Dusk turned the surface of the lake into a mirror reflecting all the sky colours.
+L0285 The pass through the mountains was dangerously narrow and strewn with loose shale.
+L0286 A single lamp burned on in the upper window of the otherwise entirely dark tower.
+L0287 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0288 Not yet seen.
+L0289 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0290 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0291 Bells rang in the distant abbey marking the slow passing of another grey hour.
+L0292 A crack in the low ceiling let in a single thread of pale grey dawn light above.
+L0293 The lock was old and desperately stiff but it yielded at last to the correct key.
+L0294 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0295 No word came.
+L0296 The faded painting showed a city that none of them had ever visited or even heard named.
+L0297 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0298 Nothing moved on the bare hillside except the slow shadow of one drifting grey cloud.
+L0299 The cellar smelled strongly of dark earth and old wood and something harder to name.
+L0300 At the edge of the world the sky turned colours no painter had ever managed to capture.
+L0301 The stone path curved gently through a canopy of ancient oaks toward the pale sky.
+L0302 Wait here.
+L0303 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0304 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0305 The old map showed trails long forgotten by all but the mountain folk here.
+L0306 Frost crept silently across the window glass in the early hours before dawn.
+L0307 Three riders appeared on the horizon moving swiftly toward the small village.
+L0308 Smoke rose in lazy spirals from the chimneys of a dozen distant farmhouses.
+L0309 Gone now.
+L0310 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0311 She found the letter tucked inside the hollow of the great silver beech tree.
+L0312 Words carved into the stone door frame had worn away past all possible reading.
+L0313 A narrow boat drifted silently past the reeds at the margin of the wide marsh.
+L0314 The merchant weighed each coin carefully before adding it to his leather purse.
+L0315 Wind swept unbroken through the tall grass of the open plain without any mercy.
+L0316 Too late.
+L0317 The answer they sought was buried deep in the archives of a forgotten library.
+L0318 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0319 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0320 An iron key hung on a peg beside the door but it opened nothing in this place.
+L0321 The forest grew steadily denser as they descended into the bowl of the valley.
+L0322 Morning brought clear skies and the distant sound of a waterfall high in hills.
+L0323 Stand firm.
+L0324 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0325 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0326 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0327 A fire burned low in the grate and cast long shadows across the cold flagstones.
+L0328 The trail ended without warning at the edge of a wide and perfectly silent river.
+L0329 He counted thirty seven steps from the gate to the well and then abruptly stopped.
+L0330 Check again.
+L0331 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0332 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0333 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0334 Dusk turned the surface of the lake into a mirror reflecting all the sky colours.
+L0335 The pass through the mountains was dangerously narrow and strewn with loose shale.
+L0336 A single lamp burned on in the upper window of the otherwise entirely dark tower.
+L0337 Not yet seen.
+L0338 He left no note behind but the chair by the dying fire was still warm to touch.
+L0339 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0340 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0341 Bells rang in the distant abbey marking the slow passing of another grey hour.
+L0342 A crack in the low ceiling let in a single thread of pale grey dawn light above.
+L0343 The lock was old and desperately stiff but it yielded at last to the correct key.
+L0344 No word came.
+L0345 He had crossed this same river a hundred times but never in such dangerously high water.
+L0346 The faded painting showed a city that none of them had ever visited or even heard named.
+L0347 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0348 Nothing moved on the bare hillside except the slow shadow of one drifting grey cloud.
+L0349 The cellar smelled strongly of dark earth and old wood and something harder to name.
+L0350 At the edge of the world the sky turned colours no painter had ever managed to capture.
+L0351 Wait here.
+L0352 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0353 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0354 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0355 The old map showed trails long forgotten by all but the mountain folk here.
+L0356 Frost crept silently across the window glass in the early hours before dawn.
+L0357 Three riders appeared on the horizon moving swiftly toward the small village.
+L0358 Gone now.
+L0359 The bridge had stood for six hundred years and still it held firm and true.
+L0360 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0361 She found the letter tucked inside the hollow of the great silver beech tree.
+L0362 Words carved into the stone door frame had worn away past all possible reading.
+L0363 A narrow boat drifted silently past the reeds at the margin of the wide marsh.
+L0364 The merchant weighed each coin carefully before adding it to his leather purse.
+L0365 Too late.
+L0366 Stars appeared one by one as the last amber light faded from the western sky.
+L0367 The answer they sought was buried deep in the archives of a forgotten library.
+L0368 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0369 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0370 An iron key hung on a peg beside the door but it opened nothing in this place.
+L0371 The forest grew steadily denser as they descended into the bowl of the valley.
+L0372 Stand firm.
+L0373 She recognised the seal pressed into the wax but refused to break it just yet.
+L0374 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0375 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0376 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0377 A fire burned low in the grate and cast long shadows across the cold flagstones.
+L0378 The trail ended without warning at the edge of a wide and perfectly silent river.
+L0379 Check again.
+L0380 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0381 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0382 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0383 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0384 Dusk turned the surface of the lake into a mirror reflecting all the sky colours.
+L0385 The pass through the mountains was dangerously narrow and strewn with loose shale.
+L0386 Not yet seen.
+L0387 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0388 He left no note behind but the chair by the dying fire was still warm to touch.
+L0389 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0390 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0391 Bells rang in the distant abbey marking the slow passing of another grey hour.
+L0392 A crack in the low ceiling let in a single thread of pale grey dawn light above.
+L0393 No word came.
+L0394 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0395 He had crossed this same river a hundred times but never in such dangerously high water.
+L0396 The faded painting showed a city that none of them had ever visited or even heard named.
+L0397 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0398 Nothing moved on the bare hillside except the slow shadow of one drifting grey cloud.
+L0399 The cellar smelled strongly of dark earth and old wood and something harder to name.
+L0400 Wait here.
+L0401 The stone path curved gently through a canopy of ancient oaks toward the pale sky.
+L0402 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0403 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0404 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0405 The old map showed trails long forgotten by all but the mountain folk here.
+L0406 Frost crept silently across the window glass in the early hours before dawn.
+L0407 Gone now.
+L0408 Smoke rose in lazy spirals from the chimneys of a dozen distant farmhouses.
+L0409 The bridge had stood for six hundred years and still it held firm and true.
+L0410 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0411 She found the letter tucked inside the hollow of the great silver beech tree.
+L0412 Words carved into the stone door frame had worn away past all possible reading.
+L0413 A narrow boat drifted silently past the reeds at the margin of the wide marsh.
+L0414 Too late.
+L0415 Wind swept unbroken through the tall grass of the open plain without any mercy.
+L0416 Stars appeared one by one as the last amber light faded from the western sky.
+L0417 The answer they sought was buried deep in the archives of a forgotten library.
+L0418 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0419 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0420 An iron key hung on a peg beside the door but it opened nothing in this place.
+L0421 Stand firm.
+L0422 Morning brought clear skies and the distant sound of a waterfall high in hills.
+L0423 She recognised the seal pressed into the wax but refused to break it just yet.
+L0424 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0425 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0426 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0427 A fire burned low in the grate and cast long shadows across the cold flagstones.
+L0428 Check again.
+L0429 He counted thirty seven steps from the gate to the well and then abruptly stopped.
+L0430 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0431 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0432 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0433 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0434 Dusk turned the surface of the lake into a mirror reflecting all the sky colours.
+L0435 Not yet seen.
+L0436 A single lamp burned on in the upper window of the otherwise entirely dark tower.
+L0437 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0438 He left no note behind but the chair by the dying fire was still warm to touch.
+L0439 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0440 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0441 Bells rang in the distant abbey marking the slow passing of another grey hour.
+L0442 No word came.
+L0443 The lock was old and desperately stiff but it yielded at last to the correct key.
+L0444 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0445 He had crossed this same river a hundred times but never in such dangerously high water.
+L0446 The faded painting showed a city that none of them had ever visited or even heard named.
+L0447 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0448 Nothing moved on the bare hillside except the slow shadow of one drifting grey cloud.
+L0449 Wait here.
+L0450 At the edge of the world the sky turned colours no painter had ever managed to capture.
+L0451 The stone path curved gently through a canopy of ancient oaks toward the pale sky.
+L0452 Grey mist gathered in the valley below as the last sunlight left the ridge.
+L0453 Cold water rushed over mossy rocks in the ravine far below the forest trail.
+L0454 Lanterns flickered along the winding street as the evening crowds dispersed.
+L0455 The old map showed trails long forgotten by all but the mountain folk here.
+L0456 Gone now.
+L0457 Three riders appeared on the horizon moving swiftly toward the small village.
+L0458 Smoke rose in lazy spirals from the chimneys of a dozen distant farmhouses.
+L0459 The bridge had stood for six hundred years and still it held firm and true.
+L0460 Heavy clouds rolled in from the north and promised snow before nightfall came.
+L0461 She found the letter tucked inside the hollow of the great silver beech tree.
+L0462 Words carved into the stone door frame had worn away past all possible reading.
+L0463 Too late.
+L0464 The merchant weighed each coin carefully before adding it to his leather purse.
+L0465 Wind swept unbroken through the tall grass of the open plain without any mercy.
+L0466 Stars appeared one by one as the last amber light faded from the western sky.
+L0467 The answer they sought was buried deep in the archives of a forgotten library.
+L0468 Two paths diverged at the crest of the hill and neither looked well travelled.
+L0469 Rain hammered the clay roof tiles and turned the whole courtyard into a lake.
+L0470 Stand firm.
+L0471 The forest grew steadily denser as they descended into the bowl of the valley.
+L0472 Morning brought clear skies and the distant sound of a waterfall high in hills.
+L0473 She recognised the seal pressed into the wax but refused to break it just yet.
+L0474 The captain ordered the sails furled as the harbour mouth finally came to view.
+L0475 Twelve stone steps led down into a chamber the size of a grand and ancient hall.
+L0476 Ivy had long since swallowed the carved inscription set above the stone archway.
+L0477 Check again.
+L0478 The trail ended without warning at the edge of a wide and perfectly silent river.
+L0479 He counted thirty seven steps from the gate to the well and then abruptly stopped.
+L0480 Snow had filled the valley overnight leaving the whole world hushed and brilliant.
+L0481 No one knew whose footprints led to the door and then so abruptly disappeared.
+L0482 The lighthouse beam swept across dark water at its slow and perfectly even rhythm.
+L0483 Parchment crinkled softly under her fingers as she unrolled the ancient torn scroll.
+L0484 Not yet seen.
+L0485 The pass through the mountains was dangerously narrow and strewn with loose shale.
+L0486 A single lamp burned on in the upper window of the otherwise entirely dark tower.
+L0487 Thorn bushes lined both sides of the narrow path making passage very difficult.
+L0488 He left no note behind but the chair by the dying fire was still warm to touch.
+L0489 Far below the cliff edge the ocean churned ceaselessly against pale limestone.
+L0490 The wagon ruts in the soft mud told of very heavy loads moved under cover of night.
+L0491 No word came.
+L0492 A crack in the low ceiling let in a single thread of pale grey dawn light above.
+L0493 The lock was old and desperately stiff but it yielded at last to the correct key.
+L0494 Dry leaves skittered across the empty courtyard driven by a sudden sharp cold gust.
+L0495 He had crossed this same river a hundred times but never in such dangerously high water.
+L0496 The faded painting showed a city that none of them had ever visited or even heard named.
+L0497 She wound the brass clock carefully and set it gently back on the stone mantelpiece.
+L0498 Wait here.
+L0499 The cellar smelled strongly of dark earth and old wood and something harder to name.
+L0500 At the edge of the world the sky turned colours no painter had ever managed to capture.

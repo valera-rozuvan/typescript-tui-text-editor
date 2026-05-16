@@ -24,7 +24,8 @@
  *   content cols  = [gutterWidth, COLS) = [4, 120)
  */
 import type { TestCase } from './types.js';
-import { EditorTest, KEY, createTempDir, createTempFile, removeTempDir } from './helpers.js';
+import { join } from 'node:path';
+import { EditorTest, KEY, copyFixtureToTemp, removeTempDir } from './helpers.js';
 
 export const suite = 'scroll_rendering';
 
@@ -192,13 +193,12 @@ export const tests: TestCase[] = [
   {
     name: 'diff renderer stays correct while navigating down through 500 lines one by one',
     async fn() {
-      const dir       = createTempDir();
+      const dir       = copyFixtureToTemp('07_scroll_rendering');
       const t         = new EditorTest(COLS, ROWS);
       const lineTexts = buildLines();
-      const content   = lineTexts.join('\n') + '\n';
 
       try {
-        const file = createTempFile(dir, 'scroll_test.txt', content);
+        const file = join(dir, 'scroll_test.txt');
         await t.start([file]);
 
         /* ── initial state: cursor on line 1 (0-indexed line 0) ──────── */

@@ -10,9 +10,10 @@
  *  - The modified indicator (●) appears after editing an unmodified buffer
  */
 import type { TestCase } from './types.js';
+import { join } from 'node:path';
 import {
   EditorTest, KEY,
-  createTempDir, createTempFile, readTempFile, removeTempDir,
+  copyFixtureToTemp, readTempFile, removeTempDir,
 } from './helpers.js';
 
 export const suite = 'text_input';
@@ -21,10 +22,10 @@ export const tests: TestCase[] = [
   {
     name: 'typing characters shows them on screen',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'input.txt', '');
+        const file = join(dir, 'input.txt');
         await t.start([file]);
         await t.type('HelloWorld');
         t.assertContains('HelloWorld');
@@ -38,10 +39,10 @@ export const tests: TestCase[] = [
   {
     name: 'status bar shows correct column after typing',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'cursor.txt', '');
+        const file = join(dir, 'cursor.txt');
         await t.start([file]);
         /* Type 5 characters; cursor moves to col 5 (0-indexed) → displayed as 1:6 */
         await t.type('ABCDE');
@@ -56,10 +57,10 @@ export const tests: TestCase[] = [
   {
     name: 'Ctrl+S saves the buffer and shows a Saved message',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'save_me.txt', '');
+        const file = join(dir, 'save_me.txt');
         await t.start([file]);
         await t.type('SavedContent99');
         /* Give the async save time to complete and trigger the re-render */
@@ -75,10 +76,10 @@ export const tests: TestCase[] = [
   {
     name: 'saved file contains exactly what was typed',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'verify.txt', '');
+        const file = join(dir, 'verify.txt');
         await t.start([file]);
         await t.type('FileContent42');
         await t.keys(KEY.CTRL_S, 500);
@@ -99,10 +100,10 @@ export const tests: TestCase[] = [
   {
     name: 'typing into an existing file shows its content merged with new input',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'existing.txt', 'original');
+        const file = join(dir, 'existing.txt');
         await t.start([file]);
         /* File loads with cursor at col 0 of line 0.
            Move to end of line then append. */
@@ -121,10 +122,10 @@ export const tests: TestCase[] = [
   {
     name: 'backspace deletes the last typed character',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'backspace.txt', '');
+        const file = join(dir, 'backspace.txt');
         await t.start([file]);
         await t.type('TypeThenDelete');
         await t.keys(KEY.BACKSPACE + KEY.BACKSPACE + KEY.BACKSPACE); /* delete last 3 */
@@ -141,10 +142,10 @@ export const tests: TestCase[] = [
   {
     name: 'Enter inserts a new line and moves cursor to it',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'newline.txt', '');
+        const file = join(dir, 'newline.txt');
         await t.start([file]);
         await t.type('Line1');
         await t.keys(KEY.ENTER);
@@ -163,10 +164,10 @@ export const tests: TestCase[] = [
   {
     name: 'modified indicator appears after editing',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'mod.txt', 'clean');
+        const file = join(dir, 'mod.txt');
         await t.start([file]);
         await t.type('x');
         /* The ● modified indicator should appear in the title bar */
@@ -181,10 +182,10 @@ export const tests: TestCase[] = [
   {
     name: 'modified indicator disappears after saving',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('02_text_input');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'clean_save.txt', '');
+        const file = join(dir, 'clean_save.txt');
         await t.start([file]);
         await t.type('dirty');
         t.assertContains('●');

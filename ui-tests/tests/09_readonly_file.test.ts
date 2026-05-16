@@ -7,8 +7,9 @@
  *  - The status bar does not show READONLY for a normal writable file
  */
 import { chmodSync } from 'node:fs';
+import { join } from 'node:path';
 import type { TestCase } from './types.js';
-import { EditorTest, createTempDir, createTempFile, removeTempDir } from './helpers.js';
+import { EditorTest, copyFixtureToTemp, removeTempDir } from './helpers.js';
 
 export const suite = 'readonly_file';
 
@@ -16,10 +17,10 @@ export const tests: TestCase[] = [
   {
     name: 'content of a read-only file is visible in the editor',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('09_readonly_file');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'ro_content.txt', 'readonly_unique_content_7z9\n');
+        const file = join(dir, 'ro_content.txt');
         chmodSync(file, 0o444);
         await t.start([file]);
         t.assertContains('readonly_unique_content_7z9');
@@ -34,10 +35,10 @@ export const tests: TestCase[] = [
   {
     name: 'status bar shows READONLY for a read-only file',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('09_readonly_file');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'ro_status.txt', 'some content\n');
+        const file = join(dir, 'ro_status.txt');
         chmodSync(file, 0o444);
         await t.start([file]);
         t.assertStatusContains('READONLY');
@@ -52,10 +53,10 @@ export const tests: TestCase[] = [
   {
     name: 'status bar does not show READONLY for a normal writable file',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('09_readonly_file');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'rw_file.txt', 'writable content\n');
+        const file = join(dir, 'rw_file.txt');
         await t.start([file]);
         t.assertNotContains('READONLY');
       } finally {

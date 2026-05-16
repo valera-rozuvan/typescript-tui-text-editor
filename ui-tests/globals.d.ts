@@ -81,6 +81,11 @@ declare module 'node:fs' {
     isDirectory(): boolean;
     size: number;
   }
+  export interface Dirent {
+    name: string;
+    isFile(): boolean;
+    isDirectory(): boolean;
+  }
   export function readFileSync(path: string, encoding: 'utf8'): string;
   export function writeFileSync(path: string, data: string, encoding?: 'utf8'): void;
   export function existsSync(path: string): boolean;
@@ -88,6 +93,9 @@ declare module 'node:fs' {
   export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void;
   export function mkdtempSync(prefix: string): string;
   export function chmodSync(path: string, mode: number): void;
+  export function copyFileSync(src: string, dest: string): void;
+  export function readdirSync(path: string, options: { withFileTypes: true }): Dirent[];
+  export function readdirSync(path: string): string[];
 }
 
 declare module 'node:fs/promises' {

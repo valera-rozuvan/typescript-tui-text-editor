@@ -17,9 +17,10 @@
  *   pane 1   : rows 14–28
  */
 import type { TestCase } from './types.js';
+import { join } from 'node:path';
 import {
   EditorTest, KEY,
-  createTempDir, createTempFile, removeTempDir,
+  copyFixtureToTemp, removeTempDir,
 } from './helpers.js';
 
 export const suite = 'multipane';
@@ -34,10 +35,10 @@ export const tests: TestCase[] = [
   {
     name: 'Alt+2 creates a horizontal split with a visible separator',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'split.txt', 'content\n');
+        const file = join(dir, 'split.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_2);
         /* A vertical separator │ should appear between the two panes */
@@ -52,10 +53,10 @@ export const tests: TestCase[] = [
   {
     name: 'Alt+2 keeps pane 0 showing the original file',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'orig.txt', 'ORIGINAL_CONTENT\n');
+        const file = join(dir, 'orig.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_2);
         t.assertInCols('ORIGINAL_CONTENT', LEFT_START, LEFT_END);
@@ -69,10 +70,10 @@ export const tests: TestCase[] = [
   {
     name: 'Ctrl+N switches focus to the next pane',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'switch.txt', 'start\n');
+        const file = join(dir, 'switch.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_2);          /* split into 2 */
         await t.keys(KEY.CTRL_N);         /* switch to pane 1 */
@@ -90,10 +91,10 @@ export const tests: TestCase[] = [
   {
     name: 'each pane holds independent content after switching and typing',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'pane0.txt', 'PANE_ZERO_DATA\n');
+        const file = join(dir, 'pane0.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_2);          /* split; pane 0 is active */
         await t.keys(KEY.CTRL_N);         /* switch to pane 1 */
@@ -113,10 +114,10 @@ export const tests: TestCase[] = [
   {
     name: 'Ctrl+N cycles back to pane 0 from pane 1',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'cycle.txt', 'CYCLE_FILE\n');
+        const file = join(dir, 'cycle.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_2);
         await t.keys(KEY.CTRL_N); /* pane 0 → pane 1 */
@@ -136,10 +137,10 @@ export const tests: TestCase[] = [
   {
     name: 'Alt+3 creates a vertical split with a horizontal separator',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'vsplit.txt', 'vsplit_content\n');
+        const file = join(dir, 'vsplit.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_3);
         /* A horizontal separator ─ should span the screen */
@@ -154,10 +155,10 @@ export const tests: TestCase[] = [
   {
     name: 'Alt+1 returns to single-pane layout, removing the separator',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'single.txt', 'only_pane\n');
+        const file = join(dir, 'single.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_2);  /* split */
         t.assertContains('│');    /* separator present */
@@ -173,10 +174,10 @@ export const tests: TestCase[] = [
   {
     name: 'Alt+4 creates a quad layout with both vertical and horizontal separators',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'quad.txt', 'quad_content\n');
+        const file = join(dir, 'quad.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_4);
         t.assertContains('│');
@@ -191,10 +192,10 @@ export const tests: TestCase[] = [
   {
     name: 'status bar reflects the active pane after switching',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('03_multipane');
       const t = new EditorTest();
       try {
-        const file = createTempFile(dir, 'status.txt', '');
+        const file = join(dir, 'status.txt');
         await t.start([file]);
         await t.keys(KEY.ALT_2);
         /* Pane 1 inherits pane 0's buffer on split.  Switch to pane 1 then

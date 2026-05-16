@@ -31,9 +31,10 @@
  * the tab lands on the rendered screen.
  */
 import type { TestCase } from './types.js';
+import { join } from 'node:path';
 import {
   EditorTest, KEY,
-  createTempDir, createTempFile, readTempFile, removeTempDir,
+  copyFixtureToTemp, readTempFile, removeTempDir,
 } from './helpers.js';
 import { TAB_CHAR_COUNT } from './constants.js';
 
@@ -95,10 +96,10 @@ export const tests: TestCase[] = [
      */
     name: 'tab characters expand to correct screen columns in the rendered output',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('12_tab_navigation');
       const t = new EditorTest(120, 30);
       try {
-        const file = createTempFile(dir, 'tabs.txt', FILE_CONTENT);
+        const file = join(dir, 'tabs.txt');
         await t.start([file]);
 
         // Sanity: all text content is visible somewhere on screen.
@@ -185,10 +186,10 @@ export const tests: TestCase[] = [
      */
     name: 'right arrow through line starting with single tab reports correct status-bar position at each step',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('12_tab_navigation');
       const t = new EditorTest(120, 30);
       try {
-        const file = createTempFile(dir, 'tabs.txt', FILE_CONTENT);
+        const file = join(dir, 'tabs.txt');
         await t.start([file]);
 
         // Verify the leading tab on line 0 renders as exactly TAB_CHAR_COUNT
@@ -267,10 +268,10 @@ export const tests: TestCase[] = [
      */
     name: 'right arrow through line with two leading tabs: each tab is one buffer character',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('12_tab_navigation');
       const t = new EditorTest(120, 30);
       try {
-        const file = createTempFile(dir, 'tabs.txt', FILE_CONTENT);
+        const file = join(dir, 'tabs.txt');
         await t.start([file]);
 
         // Verify both leading tabs on line 2 render as exactly TAB_CHAR_COUNT
@@ -361,10 +362,10 @@ export const tests: TestCase[] = [
      */
     name: 'right arrow across mid-line tab produces TAB_CHAR_COUNT visual jump',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('12_tab_navigation');
       const t = new EditorTest(120, 30);
       try {
-        const file = createTempFile(dir, 'tabs.txt', FILE_CONTENT);
+        const file = join(dir, 'tabs.txt');
         await t.start([file]);
 
         // Verify the mid-line tab on line 3 renders as exactly TAB_CHAR_COUNT
@@ -479,10 +480,10 @@ export const tests: TestCase[] = [
      */
     name: 'pressing Tab inserts one literal tab character and the cursor jumps TAB_CHAR_COUNT columns visually',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('12_tab_navigation');
       const t = new EditorTest(120, 30);
       try {
-        const file = createTempFile(dir, 'tab_insert.txt', '');
+        const file = join(dir, 'tab_insert.txt');
         await t.start([file]);
 
         // Gutter for 1-line file: max(3, 1) + 1 = 4. Content starts at screen col 4.
@@ -556,7 +557,7 @@ export const tests: TestCase[] = [
      */
     name: 'walk whole file right-arrow through 10 lines with 1-10 tabs, verifying status and tab expansion at every step',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('12_tab_navigation');
       const t = new EditorTest(120, 30);
       try {
         // Build 10 lines: line N (1-indexed) has exactly N tabs and N+1 letters,
@@ -574,7 +575,7 @@ export const tests: TestCase[] = [
           walkLines.push(line);
         }
 
-        const file = createTempFile(dir, 'walk_tabs.txt', walkLines.join('\n') + '\n');
+        const file = join(dir, 'walk_tabs.txt');
         await t.start([file]);
 
         // 10-line file: gutter = max(3, len("10")) + 1 = 4.

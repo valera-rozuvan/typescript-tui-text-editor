@@ -3,8 +3,8 @@
  * input field as characters are typed one at a time.
  *
  * Scenario:
- *   1. Create a temp dir with a .git marker (required for project-search root
- *      detection) and a single text file so the search has something to scan.
+ *   1. Copy the fixture directory (which contains a .git marker and a single
+ *      text file) to a temp location.
  *   2. Start the editor with no file open (cwd = tempDir).
  *   3. Press Ctrl+P to open the project-search panel.
  *   4. Verify the cursor is at the start of the input field (empty needle).
@@ -23,9 +23,8 @@
  * The TerminalScreen parser converts the 1-indexed ANSI ESC[row;colH sequence
  * back to 0-indexed, so getCursor() returns { row: 6, col: 17 + len }.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
 import type { TestCase } from './types.js';
-import { EditorTest, KEY, createTempDir, removeTempDir } from './helpers.js';
+import { EditorTest, KEY, copyFixtureToTemp, removeTempDir } from './helpers.js';
 
 export const suite = 'search_cursor';
 
@@ -46,11 +45,8 @@ export const tests: TestCase[] = [
   {
     name: 'Ctrl+P search cursor advances by one column per typed character',
     async fn() {
-      const dir = createTempDir();
+      const dir = copyFixtureToTemp('06_search_cursor');
       try {
-        mkdirSync(`${dir}/.git`);
-        writeFileSync(`${dir}/sample.txt`, 'hello world\nfoo bar baz\n', 'utf8');
-
         const t = new EditorTest(W, H, dir);
         try {
           await t.start();

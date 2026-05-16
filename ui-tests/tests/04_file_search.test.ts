@@ -29,7 +29,7 @@
 import type { TestCase } from './types.js';
 import {
   EditorTest, KEY,
-  createTempDir, createTempFile, removeTempDir,
+  copyFixtureToTemp, removeTempDir,
 } from './helpers.js';
 
 export const suite = 'file_search';
@@ -65,10 +65,7 @@ export const tests: TestCase[] = [
   {
     name: 'Ctrl+F finds "paper" in file_a at line 3 and jumps there, then finds "clown" in file_b at line 4 and jumps there',
     async fn() {
-      const dir = createTempDir();
-      /* Pre-create empty files so the file browser can list them. */
-      createTempFile(dir, 'file_a.txt', '');
-      createTempFile(dir, 'file_b.txt', '');
+      const dir = copyFixtureToTemp('04_file_search');
       /* cwd = dir so the editor's FileBrowser starts there. */
       const t = new EditorTest(120, 30, dir);
       try {

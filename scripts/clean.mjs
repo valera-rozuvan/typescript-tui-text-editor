@@ -10,6 +10,7 @@ const targets = [
   'unit-tests/dist',
   'ui-tests/dist',
   'ui-tests/pty/build',
+  'docker-logs',
   'node_modules',
 ];
 
