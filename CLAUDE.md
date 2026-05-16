@@ -28,8 +28,10 @@ src/
     Renderer.ts         — virtual-screen diff renderer; renders into _next ScreenBuffer via DrawContext,
                           diffs against _current, emits only changed cells as ANSI sequences
   editor/
-    Buffer.ts           — text stored as string[], file I/O via fs/promises; readOnly flag set
-                          when file has no write-permission bits
+    Buffer.ts           — text buffer; small files (< LAZY_THRESHOLD=5000 lines) eagerly loaded
+                          into string[]; large files keep an fd open and serve getLine() via
+                          readSync + LRU cache (CACHE_SIZE=2000); materializes to string[] on first
+                          mutation or full lines access; call close() when removing from openBuffers
     Cursor.ts           — line/col movement with desiredCol for up/down navigation
     Editor.ts           — event loop, key dispatch across edit/filebrowser/search/jstransform modes
   ui/
@@ -42,7 +44,11 @@ src/
                           buffer; own cursor/scroll state; opened via Alt+J in edit mode
   highlight/
     tokens.ts           — TokenType, Token, TokenizerState, Tokenizer interface, Catppuccin Mocha theme
-    Cache.ts            — chunk-based highlight cache (CHUNK_SIZE=50); invalidateFrom(line) on edit
+    Cache.ts            — chunk-based highlight cache (CHUNK_SIZE=50); coarse tokenizer-state
+                          checkpoints every CHECKPOINT_INTERVAL=100 chunks (5000 lines); background
+                          build via setImmediate for large files — getTokensForLine returns [] (plain
+                          text) while pending; fires setRedrawCallback when viewport chunk is ready;
+                          invalidateFrom(line) on edit purges chunks + downstream checkpoints
     Highlighter.ts      — language detection by extension, WeakMap caches per Buffer
     languages/          — javascript.ts, typescript.ts (extends JS), c.ts, cpp.ts (extends C),
                           markdown.ts, html.ts, css.ts
@@ -145,6 +151,9 @@ The UI test suite `tab_navigation` verifies this behaviour end-to-end: it reads 
 - **ESM imports** — all intra-project imports must use `.js` extensions (NodeNext module resolution).
 - **`Buffer.save()` auto-mkdir** — `save()` calls `mkdir(dirname(filePath), { recursive: true })` before writing, so saving to a new path with missing parent directories works automatically.
 - **`searchProject` API** — signature is `(needle, startDir, onResults, signal, maxResults?)`. Pass a mutable `{ cancelled: boolean }` object as the signal; set `.cancelled = true` to abort. `onResults` is called with partial results every 20 files and once on completion.
+- **Buffer lazy loading** — files ≥ 5000 lines keep an open fd and serve `getLine()` via `readSync` + LRU cache; they materialize (all lines loaded into memory, fd closed) automatically on first mutation or when the `lines` getter is accessed. Always call `buf.close()` when removing a buffer from `openBuffers` to release the fd (important on Windows, which locks open files).
+- **HighlightCache redraw callback** — when opening a buffer, call `highlighter.getCache(buf).setRedrawCallback(() => this.render())`; when closing it, call `setRedrawCallback(null)`. The callback fires when the background tokenizer build reaches the checkpoint covering the current viewport, replacing the initial plain-text render with highlighted output.
+- **FileSearch and lazy buffers** — `searchInBuffer` calls `buf.materialize()` before iterating lines. Without this, a search over a large lazy buffer would issue one `readSync` per cache miss (~1 M calls for a 1 M-line file).
 
 ---
 
@@ -205,25 +214,25 @@ if (process.platform !== 'win32') {
 
 **Problem:** Windows files conventionally use `\r\n` line endings. `content.split('\n')` leaves a trailing `\r` on every line, which renders as a visible character and corrupts cursor positions.
 
-**Fix (read side):** Both the constructor and `fromFile` normalise before splitting:
+**Fix (read side, constructor):** The constructor normalises the in-memory string before splitting:
 
 ```ts
-// constructor
 const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-this.lines = normalized === '' ? [''] : normalized.split('\n');
-
-// fromFile
-const raw = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-const lines = raw.split('\n');
+this._lines = normalized === '' ? [''] : normalized.split('\n');
 ```
 
-The double replace — `\r\n` first, bare `\r` second — handles CRLF files (Windows), CR-only files (old Mac OS 9), and mixed-ending files in one pass.
+The double replace — `\r\n` first, bare `\r` second — handles CRLF (Windows), CR-only (old Mac OS 9), and mixed-ending files in one pass.
 
-**Fix (write side):** `Buffer` carries a `lineEnding: '\r\n' | '\n'` field (default `'\n'`). `fromFile` detects the original style before normalising:
+**Fix (read side, `fromFile`):** `fromFile` now uses a streaming byte-scan (`openSync` + `readSync` in 64 KB chunks) to build the line-offset index without loading the whole file. CRLF detection is done on the first decoded chunk:
 
 ```ts
-buf.lineEnding = content.includes('\r\n') ? '\r\n' : '\n';
+const sample = new TextDecoder('utf-8').decode(chunkBuf.subarray(0, bytesRead));
+buf.lineEnding = sample.includes('\r\n') ? '\r\n' : '\n';
 ```
+
+`getLine()` strips `\r?\n$` from each byte range it reads so `\r` never appears in line content regardless of file encoding.
+
+**Fix (write side):** `Buffer` carries a `lineEnding: '\r\n' | '\n'` field (default `'\n'`). `fromFile` detects the original style from the first chunk (see above).
 
 `toString()` uses it when joining:
 

@@ -12,6 +12,9 @@ export interface FileSearchResult {
 
 export function searchInBuffer(needle: string, buf: Buffer): FileSearchResult[] {
   if (!needle) return [];
+  // Materialize lazy buffers up-front: a line-by-line search over a lazy buffer
+  // would cause O(N) readSync calls on a large file, which is prohibitively slow.
+  buf.materialize();
   const results: FileSearchResult[] = [];
 
   for (let ln = 0; ln < buf.lineCount; ln++) {

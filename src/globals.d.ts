@@ -31,6 +31,12 @@ declare const process: {
 
 declare function setTimeout(fn: () => void, ms: number): symbol;
 declare function clearTimeout(id: symbol | null): void;
+declare function setImmediate(fn: () => void): unknown;
+
+declare class TextDecoder {
+  constructor(encoding?: string);
+  decode(input?: Uint8Array, options?: { stream?: boolean }): string;
+}
 
 declare namespace NodeJS {
   interface ErrnoException extends Error {
@@ -52,6 +58,9 @@ declare module 'fs' {
   export function readFileSync(path: string, encoding: 'utf8'): string;
   export function statSync(path: string): Stats;
   export function existsSync(path: string): boolean;
+  export function openSync(path: string, flags: string): number;
+  export function readSync(fd: number, buffer: Uint8Array, offset: number, length: number, position: number | null): number;
+  export function closeSync(fd: number): void;
 }
 
 declare module 'fs/promises' {

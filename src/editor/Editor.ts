@@ -50,6 +50,7 @@ export class Editor {
     const buf = await Buffer.fromFile(absPath);
     this.highlighter.onFilePathChange(buf);
     this._registerBuffer(buf);
+    this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
     const pane = this.layout.activePane;
     pane.buffer = buf;
     pane.cursor.setPos(0, 0);
@@ -69,6 +70,7 @@ export class Editor {
   private _registerBuffer(buf: Buffer): void {
     if (!this.openBuffers.includes(buf)) {
       this.openBuffers.push(buf);
+      this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
     }
   }
 
@@ -93,6 +95,7 @@ export class Editor {
     if (next === cur) return;
     pane.buffer = next;
     this.highlighter.onFilePathChange(next);
+    this.highlighter.getCache(next).setRedrawCallback(() => this.render());
     const saved = this.bufferCursorState.get(next);
     if (saved) {
       pane.cursor.setPos(saved.line, saved.col);
@@ -408,6 +411,7 @@ export class Editor {
           Buffer.fromFile(sel.fullPath).then(buf => {
             this.highlighter.onFilePathChange(buf);
             this._registerBuffer(buf);
+            this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
             targetPane.buffer = buf;
             targetPane.cursor.setPos(0, 0);
             targetPane.scrollLine = 0;
@@ -538,6 +542,7 @@ export class Editor {
       Buffer.fromFile(projResult.filePath).then(buf => {
         this.highlighter.onFilePathChange(buf);
         this._registerBuffer(buf);
+        this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
         targetPane.buffer = buf;
         targetPane.cursor.setPos(projResult.line, projResult.col);
         targetPane.scrollLine = 0;
@@ -627,6 +632,8 @@ export class Editor {
       const bIdx = this.openBuffers.indexOf(closedBuf);
       if (bIdx >= 0) this.openBuffers.splice(bIdx, 1);
       this.bufferCursorState.delete(closedBuf);
+      closedBuf.close();
+      this.highlighter.getCache(closedBuf).setRedrawCallback(null);
     }
   }
 }
