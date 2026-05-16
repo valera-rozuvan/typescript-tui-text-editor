@@ -9,9 +9,6 @@
  *   node ui-tests/runner.mjs --debug                # debug all suites
  *   node ui-tests/runner.mjs --debug --suite <name> # debug a specific suite
  *
- * Suite names: startup, text_input, multipane, file_search, project_search,
- *              search_cursor, scroll_rendering, scroll_rendering_c_code,
- *              readonly_file, file_browser, js_transform, tab_navigation
  */
 
 import { execSync } from 'node:child_process';
@@ -78,6 +75,7 @@ if (suiteFilter) {
 /* ── run suites ────────────────────────────────────────────────────────────── */
 let totalPassed = 0;
 let totalFailed = 0;
+const discoveredSuites = [];
 
 for (const testFile of testFiles) {
   let mod;
@@ -94,6 +92,8 @@ for (const testFile of testFiles) {
   const suiteName = String(mod.suite ?? testFile)
     .replace(/.*\/dist\//, '')
     .replace('.test.js', '');
+
+  discoveredSuites.push(suiteName);
 
   if (suiteFilter && suiteName !== suiteFilter) continue;
 
@@ -132,9 +132,7 @@ for (const testFile of testFiles) {
 
 if (suiteFilter && totalPassed === 0 && totalFailed === 0) {
   console.error(`No suite named "${suiteFilter}" found.`);
-  console.error('Available suites: startup, text_input, multipane, file_search, project_search,');
-  console.error('                  search_cursor, scroll_rendering, scroll_rendering_c_code,');
-  console.error('                  readonly_file, file_browser, js_transform');
+  console.error(`Available suites: ${discoveredSuites.join(', ')}`);
   debugServer?.notifyDone();
   await debugServer?.close();
   process.exit(1);
