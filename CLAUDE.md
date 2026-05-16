@@ -107,7 +107,7 @@ node ui-tests/runner.mjs --debug --suite <name>   # step-through debug mode
 
 UI tests spawn the editor inside a real PTY (via a C N-API addon wrapping `forkpty`), inject keystrokes, and assert on screen content and saved file contents. They live in `ui-tests/tests/NN_name.test.ts` and are auto-discovered by the runner.
 
-Available suites: `startup`, `text_input`, `multipane`, `file_search`, `project_search`, `search_cursor`, `scroll_rendering`, `scroll_rendering_c_code`, `readonly_file`, `file_browser`, `js_transform`, `tab_navigation`.
+Available suites: `startup`, `text_input`, `multipane`, `file_search`, `project_search`, `search_cursor`, `scroll_rendering`, `scroll_rendering_c_code`, `readonly_file`, `file_browser`, `js_transform`, `tab_navigation`, `multi_pane`.
 
 ### Running all tests together
 
