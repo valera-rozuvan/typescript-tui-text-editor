@@ -6,15 +6,16 @@ excerpt.
 
 ---
 
-## 1. `push()` helper — defined 7 times identically
+## 1. `push()` helper — defined 5 times identically
 
-The exact same 3-line function appears independently in every language tokenizer.
+The exact same 3-line function appears independently in every language tokenizer that
+contains its own tokenizing loop. Note: `typescript.ts` and `cpp.ts` do **not** define
+`push()` — they delegate entirely to their parent tokenizers (`jsTokenizer` /
+`cTokenizer`) and only reclassify the resulting tokens; they contain no local functions.
 
 **Files:**
 - `src/highlight/languages/javascript.ts`
-- `src/highlight/languages/typescript.ts` (inherits JS, but file also carries it)
 - `src/highlight/languages/c.ts`
-- `src/highlight/languages/cpp.ts` (inherits C, but file also carries it)
 - `src/highlight/languages/html.ts`
 - `src/highlight/languages/css.ts`
 - `src/highlight/languages/markdown.ts`
@@ -73,18 +74,24 @@ if (line[i] === '/' && line[i + 1] === '/') {
 
 ---
 
-## 4. String literal parsing — identical in 4 tokenizers
+## 4. String literal parsing — similar across 4 tokenizers (with differences)
 
-The quote-walking loop with backslash escape handling is copy-pasted across four
-language files.
+The quote-walking loop with backslash escape handling appears across four language files,
+but the implementations are not identical — they require adaptation before they can share
+a single helper.
 
-**Files:**
-- `src/highlight/languages/javascript.ts` (~lines 99–110)
-- `src/highlight/languages/c.ts` (~lines 78–88)
-- `src/highlight/languages/html.ts` (~lines 64–70)
-- `src/highlight/languages/css.ts` (~lines 56–66)
+**Files and their differences:**
+- `src/highlight/languages/javascript.ts` (~lines 99–110) — handles both `"` and `'` in
+  one block; backslash escaping ✓
+- `src/highlight/languages/css.ts` (~lines 56–66) — identical to the JS version ✓
+- `src/highlight/languages/c.ts` — **two separate parsers**: char literals (`'`-only,
+  ~lines 64–75) and string literals (`"`-only, ~lines 77–88); the combined-quote
+  architecture differs from JS/CSS
+- `src/highlight/languages/html.ts` (~lines 64–70) — nested inside the attribute parsing
+  loop, not a top-level branch; **no backslash escape handling** (missing
+  `if (line[j2] === '\\') j2++;`); emits token type `'value'` rather than `'string'`
 
-**Repeated code:**
+**JS/CSS form (truly identical):**
 ```typescript
 if (line[i] === '"' || line[i] === "'") {
   const quote = line[i];
@@ -99,6 +106,10 @@ if (line[i] === '"' || line[i] === "'") {
   continue;
 }
 ```
+
+A shared `scanStringLiteral()` helper must therefore accept a `quote` parameter (for C's
+split-by-type approach) and the C/HTML call sites will need adaptation rather than a
+straight substitution.
 
 ---
 
@@ -347,7 +358,7 @@ verbatim five times in the same file.
 | Method | Lines |
 |--------|-------|
 | `openFile()` | 56–58 |
-| `openBuffer()` | 65–67 |
+| `openBuffer()` | 64–66 |
 | `_cycleBuffer()` else branch | 105–107 |
 | `handleBrowserKey()` enter case | 416–418 |
 | `_closeActivePane()` | 627–629 |
@@ -387,6 +398,14 @@ this._registerBuffer(buf);
 this.highlighter.getCache(buf).setRedrawCallback(() => this.render());
 targetPane.buffer = buf;
 ```
+
+**Note — pre-existing redundancy:** `_registerBuffer()` already calls
+`setRedrawCallback(() => this.render())` internally (but only for buffers not yet in
+`openBuffers`). The explicit `setRedrawCallback` call at each of the three sites is
+therefore redundant for new buffers, and is the only active call for buffers that are
+already registered. The proposed `_loadBufferIntoPane` should consolidate this: call
+`setRedrawCallback` unconditionally once inside the new method and remove the duplicate
+call inside `_registerBuffer`.
 
 Should be extracted as a private `_loadBufferIntoPane(buf: Buffer, pane: Pane): void`
 method on `Editor` that encapsulates these four lines plus the pane reset (item 14),
@@ -450,13 +469,13 @@ helper on `Renderer`.
 
 | # | Priority | Duplication | Files affected |
 |---|----------|-------------|----------------|
-| 1 | High | `push()` helper | 7 tokenizer files |
+| 1 | High | `push()` helper | 5 tokenizer files |
 | 7 | High | `adjustScroll()` | 3 UI components |
 | 14 | High | Pane state reset | `Editor.ts` (5×) |
 | 15 | High | Buffer load + highlight wiring | `Editor.ts` (3×) |
 | 2 | Medium | Block comment parsing | `javascript.ts`, `c.ts` |
 | 3 | Medium | Line comment parsing | `javascript.ts`, `c.ts` |
-| 4 | Medium | String literal parsing | `javascript.ts`, `c.ts`, `html.ts`, `css.ts` |
+| 4 | Medium | String literal parsing (JS/CSS identical; C/HTML need adaptation) | `javascript.ts`, `c.ts`, `html.ts`, `css.ts` |
 | 5 | Medium | Identifier classification prelude | `javascript.ts`, `c.ts` |
 | 6 | Medium | Number literal parsing | `javascript.ts`, `c.ts` |
 | 11 | Medium | Tab expansion | `ScreenBuffer.ts`, `Renderer.ts` |
