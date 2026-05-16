@@ -24,6 +24,7 @@ export const KEY = {
   CTRL_F:     '\x06', /* In-file search */
   CTRL_P:     '\x10', /* Project search */
   CTRL_W:     '\x17', /* Close pane buffer */
+  CTRL_U:     '\x15', /* Open undo history panel */
   ESCAPE:     '\x1b',
   ENTER:      '\x0d',
   BACKSPACE:  '\x7f',

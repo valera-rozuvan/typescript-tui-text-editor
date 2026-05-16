@@ -2,6 +2,7 @@ import { writeFile, mkdir, stat } from 'fs/promises';
 import { openSync, readSync, closeSync } from 'fs';
 import { basename, dirname } from 'path';
 import { getIndentLength, deleteCharBefore as utilDeleteCharBefore, insertNewlineWithIndent } from '../util.js';
+import { UndoHistory } from './UndoHistory.js';
 
 const LAZY_THRESHOLD = 5000; // lines: files below this are loaded eagerly
 const CACHE_SIZE = 2000;     // max LRU line cache entries for lazy buffers
@@ -19,6 +20,7 @@ export class Buffer {
   modified = false;
   readOnly = false;
   lineEnding: '\r\n' | '\n' = '\n';
+  readonly undoHistory = new UndoHistory();
 
   constructor(content = '') {
     const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
@@ -97,6 +99,7 @@ export class Buffer {
       // and the buffer behaves identically to eager mode for small files.
       if (buf._lineOffsets.length < LAZY_THRESHOLD) {
         buf._materializeSync();
+        buf.undoHistory.checkpoint([...buf._lines], 0, 0);
       }
 
     } catch (e: unknown) {

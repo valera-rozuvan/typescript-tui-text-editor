@@ -13,6 +13,9 @@ export class Layout {
   browserWidth = 32;
   browserFocused = false;
 
+  undoPanelVisible = false;
+  undoPanelWidth = 44;
+
   private _termW = 80;
   private _termH = 24;
 
@@ -48,6 +51,11 @@ export class Layout {
     this._recompute();
   }
 
+  toggleUndoPanel(): void {
+    this.undoPanelVisible = !this.undoPanelVisible;
+    this._recompute();
+  }
+
   get activePane(): Pane {
     return this.panes[this.activePaneIndex];
   }
@@ -64,6 +72,12 @@ export class Layout {
     const h = this._termH - 1; // minus status bar
     const x = this.browserSide === 'left' ? 0 : this._termW - this.browserWidth;
     return { x, y: 0, w: this.browserWidth, h };
+  }
+
+  undoPanelBounds(): { x: number; y: number; w: number; h: number } {
+    const h = this._termH - 1;
+    const x = this._termW - this.undoPanelWidth;
+    return { x, y: 0, w: this.undoPanelWidth, h };
   }
 
   get termW(): number { return this._termW; }
@@ -83,6 +97,10 @@ export class Layout {
       } else {
         cW = W - this.browserWidth;
       }
+    }
+
+    if (this.undoPanelVisible) {
+      cW = cW - this.undoPanelWidth;
     }
 
     // Ensure at least 1 column wide

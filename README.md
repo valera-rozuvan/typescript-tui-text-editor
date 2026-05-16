@@ -33,6 +33,7 @@ npm install -g @valera_rozuvan/vted
 - **Fuzzy search** — search within open files or across the entire project tree
 - **Project search** — walks up from the current file to the nearest `.git/` root, then recursively searches all files with fuzzy matching and result previews
 - **JS Transform Panel** — press `Alt+J` to open an inline JavaScript editor; write a function that receives each line and returns the transformed result, then `Alt+J` again to apply it to the active buffer; `Alt+C` to cancel
+- **Undo history** — press `Ctrl+U` to open a checkpoint panel listing every saved snapshot of the active buffer; navigate with `↑`/`↓` to preview each revision live in the source pane, then `Enter` to revert or `Esc` to cancel; checkpoints are created automatically after 3 seconds of idle editing and on every `Ctrl+S` save
 - **Syntax highlighting** — JavaScript, TypeScript, C, C++, Markdown, HTML, CSS; chunk-based cache invalidated on edit
 - **True-color theme** — Catppuccin Mocha palette via RGB ANSI escape sequences
 - **Read-only mode** — automatically detected from file permissions; the editor displays a read-only indicator and blocks writes
@@ -98,6 +99,7 @@ After `clean`, run `npm install` and `npm run build` (plus `npm run ui-test:buil
 | `Alt+2` | Two panes side by side |
 | `Alt+3` | Two panes top/bottom |
 | `Alt+4` | Four pane quad layout |
+| `Ctrl+U` | Open undo history panel |
 | `Ctrl+←/→` | Move by word |
 | `Ctrl+Home/End` | Jump to file start/end |
 | `Home / End` | Line start/end |
@@ -107,6 +109,8 @@ After `clean`, run `npm install` and `npm run build` (plus `npm run ui-test:buil
 In the **file browser**: arrows navigate, `Enter` opens a file or enters a directory, `Backspace` goes up a directory, `Tab` returns focus to the editor without closing the browser, `Escape` closes it.
 
 In **search**: type to filter results, `↑/↓` to navigate, `Enter` to jump to the selected result, `Escape` to close.
+
+In the **undo history panel**: `↑` moves toward a newer checkpoint, `↓` moves toward an older one; the source pane previews the selected revision live. `Enter` reverts the buffer to that revision (forward history is discarded). `Esc` or `Ctrl+U` closes the panel without reverting.
 
 ## Note on imports for Node.js TypeScript source files
 
@@ -378,7 +382,8 @@ docker run --rm node-text-editor \
 
 Available suite names: `startup`, `text_input`, `multipane`, `file_search`,
 `project_search`, `search_cursor`, `scroll_rendering`, `scroll_rendering_c_code`,
-`readonly_file`, `file_browser`, `js_transform`, `tab_navigation`.
+`readonly_file`, `file_browser`, `js_transform`, `tab_navigation`, `multi_pane`,
+`undo_history`.
 
 ---
 
@@ -439,6 +444,8 @@ ui-tests/
     10_file_browser.test.ts          File browser navigation tests
     11_js_transform.test.ts          JS transform modal tests
     12_tab_navigation.test.ts        Tab character rendering and cursor movement tests
+    13_multi_pane.test.ts            Multi-pane simultaneous editing tests
+    14_undo_history.test.ts          Undo history panel and checkpoint revert tests
   runner.mjs               Test runner
   build.mjs                Cross-platform build script
   README.md                Architecture and usage documentation

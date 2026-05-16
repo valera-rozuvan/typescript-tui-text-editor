@@ -5,7 +5,7 @@ import { THEME } from '../highlight/tokens.js';
 import type { DrawContext } from '../terminal/ScreenBuffer.js';
 import { displayPath } from '../utils/displayPath.js';
 
-export type EditorMode = 'edit' | 'filebrowser' | 'search' | 'jstransform';
+export type EditorMode = 'edit' | 'filebrowser' | 'search' | 'jstransform' | 'undo';
 
 export function renderStatusBar(
   ctx: DrawContext,
@@ -23,6 +23,14 @@ export function renderStatusBar(
 
   if (message) {
     ctx.write(message.padEnd(termWidth).slice(0, termWidth));
+    ctx.reset();
+    return;
+  }
+
+  if (mode === 'undo') {
+    ctx.setBold(true);
+    ctx.write('UNDO HISTORY   ↑↓ navigate   Enter = revert   Esc = cancel'
+      .slice(0, termWidth).padEnd(termWidth));
     ctx.reset();
     return;
   }

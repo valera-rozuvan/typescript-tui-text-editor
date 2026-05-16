@@ -5,6 +5,7 @@ import { Layout } from '../../dist/ui/Layout.js';
 import { FileBrowser } from '../../dist/ui/FileBrowser.js';
 import { SearchPanel } from '../../dist/ui/SearchPanel.js';
 import { JsTransformPanel } from '../../dist/ui/JsTransformPanel.js';
+import { UndoPanel } from '../../dist/ui/UndoPanel.js';
 import { Highlighter } from '../../dist/highlight/Highlighter.js';
 import type { TestCase } from './types.js';
 
@@ -24,7 +25,7 @@ function captureRender(
   const orig = stdout.write.bind(process.stdout);
   stdout.write = (s: unknown) => { chunks.push(s as string); return true; };
   try {
-    renderer.render(layout, fb, sp, new JsTransformPanel(), hl, 'search', '');
+    renderer.render(layout, fb, sp, new JsTransformPanel(), new UndoPanel(), hl, 'search', '');
   } finally {
     stdout.write = orig;
   }

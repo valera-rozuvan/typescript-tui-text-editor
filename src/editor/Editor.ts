@@ -1,5 +1,5 @@
 import { resolve, dirname } from 'path';
-import { CURSOR_BLINK_MS } from '../constants.js';
+import { CURSOR_BLINK_MS, UNDO_CHECKPOINT_MS } from '../constants.js';
 import { Terminal } from '../terminal/Terminal.js';
 import { parseKeys } from '../terminal/Input.js';
 import type { KeyEvent } from '../terminal/Input.js';
@@ -10,6 +10,7 @@ import type { Pane } from '../ui/Pane.js';
 import { FileBrowser } from '../ui/FileBrowser.js';
 import { SearchPanel } from '../ui/SearchPanel.js';
 import { JsTransformPanel } from '../ui/JsTransformPanel.js';
+import { UndoPanel } from '../ui/UndoPanel.js';
 import { Highlighter } from '../highlight/Highlighter.js';
 import type { EditorMode } from '../ui/StatusBar.js';
 import { searchInBuffers } from '../search/FileSearch.js';
@@ -23,12 +24,14 @@ export class Editor {
   private fileBrowser: FileBrowser;
   private searchPanel = new SearchPanel();
   private jsTransformPanel = new JsTransformPanel();
+  private undoPanel = new UndoPanel();
   private highlighter = new Highlighter();
   private renderer: Renderer;
   private mode: EditorMode = 'edit';
   private message = '';
   private messageTimer: ReturnType<typeof setTimeout> | null = null;
   private _blinkTimer: ReturnType<typeof setInterval> | null = null;
+  private _undoTimer: ReturnType<typeof setTimeout> | null = null;
   private running = false;
   private _projectSearchCancel: { cancelled: boolean } | null = null;
 
@@ -163,6 +166,7 @@ export class Editor {
       this.fileBrowser,
       this.searchPanel,
       this.jsTransformPanel,
+      this.undoPanel,
       this.highlighter,
       this.mode,
       this.message
@@ -176,6 +180,7 @@ export class Editor {
       case 'filebrowser':  this.handleBrowserKey(ev); break;
       case 'search':       this.handleSearchKey(ev); break;
       case 'jstransform':  this.handleJsTransformKey(ev); break;
+      case 'undo':         this.handleUndoKey(ev); break;
     }
     this.render();
   }
@@ -190,6 +195,9 @@ export class Editor {
         case 's': {
           const buf = this.layout.activePane.buffer;
           if (buf) {
+            const pane = this.layout.activePane;
+            buf.undoHistory.checkpoint([...buf.lines], pane.cursor.line, pane.cursor.col);
+            if (this._undoTimer) { clearTimeout(this._undoTimer); this._undoTimer = null; }
             buf.save().then(() => this.showMessage(`Saved: ${buf.name}`)).catch(err => {
               this.showMessage(`Error saving: ${err.message}`);
             });
@@ -216,6 +224,15 @@ export class Editor {
         case 'n': this.layout.nextPane(); return;
         case 'N': this.layout.prevPane(); return;
         case 'w': this._closeActivePane(); return;
+
+        case 'u': {
+          const buf = this.layout.activePane.buffer;
+          if (!buf || buf.undoHistory.count === 0) return;
+          this.undoPanel.open(buf);
+          this.layout.toggleUndoPanel();
+          this.mode = 'undo';
+          return;
+        }
 
         case 'left':  {
           const p = this.layout.activePane;
@@ -311,6 +328,7 @@ export class Editor {
           pane.cursor.setPos(line + 1, indent);
           this.highlighter.invalidateFrom(line, buf);
           pane.scrollToCursor();
+          this._resetUndoTimer(buf, pane.cursor.line, pane.cursor.col);
         }
         break;
 
@@ -321,6 +339,7 @@ export class Editor {
           pane.cursor.setPos(newPos.line, newPos.col);
           this.highlighter.invalidateFrom(newPos.line, buf);
           pane.scrollToCursor();
+          this._resetUndoTimer(buf, pane.cursor.line, pane.cursor.col);
         }
         break;
 
@@ -343,6 +362,7 @@ export class Editor {
             this.highlighter.invalidateFrom(line, buf);
           }
           pane.scrollToCursor();
+          this._resetUndoTimer(buf, pane.cursor.line, pane.cursor.col);
         }
         break;
 
@@ -353,6 +373,7 @@ export class Editor {
           pane.cursor.setPos(line, col + 1);
           this.highlighter.invalidateFrom(line, buf);
           pane.scrollToCursor();
+          this._resetUndoTimer(buf, pane.cursor.line, pane.cursor.col);
         }
         break;
 
@@ -370,6 +391,7 @@ export class Editor {
             pane.cursor.setPos(line, col + ev.char.length);
             this.highlighter.invalidateFrom(line, buf);
             pane.scrollToCursor();
+            this._resetUndoTimer(buf, pane.cursor.line, pane.cursor.col);
           } else {
             // Open a new unnamed buffer on first keypress
             const newBuf = new Buffer('');
@@ -378,6 +400,7 @@ export class Editor {
             newBuf.insert(line, col, ev.char);
             pane.cursor.setPos(line, col + ev.char.length);
             pane.scrollToCursor();
+            this._resetUndoTimer(newBuf, pane.cursor.line, pane.cursor.col);
           }
         }
         break;
@@ -575,6 +598,54 @@ export class Editor {
         }
         break;
     }
+  }
+
+  private handleUndoKey(ev: KeyEvent): void {
+    const { key, ctrl } = ev;
+
+    if (key === 'escape' || (ctrl && key === 'u')) {
+      this.undoPanel.close();
+      this.layout.toggleUndoPanel();
+      this.mode = 'edit';
+      return;
+    }
+
+    switch (key) {
+      case 'up':    this.undoPanel.moveUp(); break;
+      case 'down':  this.undoPanel.moveDown(); break;
+      case 'enter': this._executeUndoRevert(); return;
+    }
+  }
+
+  private _executeUndoRevert(): void {
+    const cp = this.undoPanel.selected;
+    if (!cp) return;
+    const buf = this.undoPanel.targetBuffer;
+    if (!buf) return;
+
+    buf.undoHistory.revertTo(this.undoPanel.selectedIndex);
+    buf.lines = [...cp.lines];
+    buf.modified = true;
+
+    const pane = this.layout.panes.find(p => p.buffer === buf) ?? this.layout.activePane;
+    const clampedLine = Math.min(cp.cursorLine, buf.lineCount - 1);
+    const clampedCol = Math.min(cp.cursorCol, buf.getLine(clampedLine).length);
+    pane.cursor.setPos(clampedLine, clampedCol);
+    pane.scrollToCursor();
+
+    this.highlighter.invalidateFrom(0, buf);
+
+    this.undoPanel.close();
+    this.layout.toggleUndoPanel();
+    this.mode = 'edit';
+  }
+
+  private _resetUndoTimer(buf: Buffer, cursorLine: number, cursorCol: number): void {
+    if (this._undoTimer) clearTimeout(this._undoTimer);
+    this._undoTimer = setTimeout(() => {
+      buf.undoHistory.checkpoint([...buf.lines], cursorLine, cursorCol);
+      this._undoTimer = null;
+    }, UNDO_CHECKPOINT_MS);
   }
 
   private _executeJsTransform(): void {

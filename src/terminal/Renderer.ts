@@ -6,6 +6,7 @@ import type { Pane } from '../ui/Pane.js';
 import type { FileBrowser } from '../ui/FileBrowser.js';
 import type { SearchPanel } from '../ui/SearchPanel.js';
 import type { JsTransformPanel } from '../ui/JsTransformPanel.js';
+import type { UndoPanel } from '../ui/UndoPanel.js';
 import type { Highlighter } from '../highlight/Highlighter.js';
 import type { EditorMode } from '../ui/StatusBar.js';
 import { renderStatusBar } from '../ui/StatusBar.js';
@@ -41,6 +42,7 @@ export class Renderer {
     fileBrowser: FileBrowser,
     searchPanel: SearchPanel,
     jsTransformPanel: JsTransformPanel,
+    undoPanel: UndoPanel,
     highlighter: Highlighter,
     mode: EditorMode,
     message: string
@@ -62,8 +64,12 @@ export class Renderer {
 
     // Render all components into _next.
     for (let i = 0; i < layout.panes.length; i++) {
-      const isActive = i === layout.activePaneIndex && !layout.browserFocused && !searchPanel.active && !jsTransformPanel.active;
-      this._renderPane(layout.panes[i], isActive, highlighter);
+      const isActive = i === layout.activePaneIndex
+        && !layout.browserFocused
+        && !searchPanel.active
+        && !jsTransformPanel.active
+        && !undoPanel.active;
+      this._renderPane(layout.panes[i], isActive, highlighter, undoPanel);
     }
     this._renderSeparators(layout);
     if (layout.browserVisible) {
@@ -74,6 +80,9 @@ export class Renderer {
     }
     if (jsTransformPanel.active) {
       this._renderJsTransformPanel(jsTransformPanel, W, H);
+    }
+    if (undoPanel.active) {
+      this._renderUndoPanel(undoPanel, layout);
     }
     renderStatusBar(this._ctx, layout, mode, highlighter, fileBrowser, message, W, H);
 
@@ -192,10 +201,24 @@ export class Renderer {
 
   // ── pane rendering ───────────────────────────────────────────────────────
 
-  private _renderPane(pane: Pane, isActive: boolean, highlighter: Highlighter): void {
+  private _renderPane(pane: Pane, isActive: boolean, highlighter: Highlighter, undoPanel: UndoPanel): void {
     const ctx = this._ctx;
     const { x, y, width, height } = pane;
     if (width <= 0 || height <= 0) return;
+
+    const previewActive =
+      undoPanel.active &&
+      undoPanel.targetBuffer === pane.buffer &&
+      undoPanel.previewLines !== null;
+
+    const effectiveLineCount = previewActive
+      ? undoPanel.previewLines!.length
+      : (pane.buffer?.lineCount ?? 0);
+
+    const getEffectiveLine = (n: number): string =>
+      previewActive
+        ? (undoPanel.previewLines![n] ?? '')
+        : (pane.buffer?.getLine(n) ?? '');
 
     // Title bar (row 0 of the pane).
     ctx.moveTo(y, x);
@@ -225,7 +248,7 @@ export class Renderer {
         ctx.setBg(THEME.bg);
       }
 
-      if (pane.buffer && lineNum < pane.buffer.lineCount) {
+      if (pane.buffer && lineNum < effectiveLineCount) {
         // Gutter
         ctx.setFg(THEME.gutterFg);
         if (isCursorLine) ctx.setBold(true);
@@ -235,7 +258,7 @@ export class Renderer {
         if (isCursorLine) ctx.setBg(THEME.currentLineBg);
 
         // Content
-        const lineStr = pane.buffer.getLine(lineNum);
+        const lineStr = getEffectiveLine(lineNum);
         const tokens  = highlighter.getTokensForLine(lineNum, pane.buffer);
         this._renderLine(lineStr, tokens, pane.scrollCol, cw, isActive, isCursorLine, pane.cursor.col);
       } else {
@@ -555,6 +578,75 @@ export class Renderer {
     ctx.write(fitStr('  Alt+J: Run & Close    Alt+C: Cancel', panelW));
     ctx.reset();
   }
+  // ── undo panel rendering ─────────────────────────────────────────────────
+
+  private _renderUndoPanel(undoPanel: UndoPanel, layout: Layout): void {
+    const ctx = this._ctx;
+    const bounds = layout.undoPanelBounds();
+    const { x, y, w, h } = bounds;
+    if (w <= 0 || h <= 0) return;
+
+    const buf = undoPanel.targetBuffer;
+    if (!buf) return;
+
+    // Left border column
+    for (let row = 0; row < h; row++) {
+      ctx.moveTo(y + row, x);
+      ctx.setFg(THEME.borderInactive);
+      ctx.setBg(THEME.bg);
+      ctx.write('│');
+      ctx.reset();
+    }
+
+    const panelX = x + 1;
+    const panelW = w - 1;
+    if (panelW <= 0) return;
+
+    // Title bar
+    ctx.moveTo(y, panelX);
+    ctx.setBg(THEME.titleActiveBg);
+    ctx.setFg(THEME.titleActiveFg);
+    ctx.setBold(true);
+    ctx.write(fitStr(' Undo History', panelW));
+    ctx.reset();
+
+    // List entries (newest at top)
+    const listH = h - 1;
+    const count = buf.undoHistory.count;
+    const list = buf.undoHistory.list;
+    undoPanel.adjustScroll(listH);
+
+    for (let row = 0; row < listH; row++) {
+      const displayIdx = undoPanel.scrollOffset + row;
+      const historyIdx = (count - 1) - displayIdx;
+      ctx.moveTo(y + 1 + row, panelX);
+
+      if (historyIdx >= 0 && historyIdx < count) {
+        const cp = list[historyIdx];
+        const isSel = historyIdx === undoPanel.selectedIndex;
+
+        if (isSel) {
+          ctx.setBg(THEME.selectionBg);
+          ctx.setFg(THEME.fg);
+          ctx.setBold(true);
+        } else {
+          ctx.setBg(THEME.bgAlt);
+          ctx.setFg(THEME.fgDim);
+        }
+
+        const id    = `#${cp.id}`;
+        const time  = formatTime(cp.timestamp);
+        const lines = `(${cp.lines.length} lines)`;
+        const entry = ` ${id.padStart(4)}  ${time}  ${lines}`;
+        ctx.write(fitStr(entry, panelW));
+      } else {
+        ctx.setBg(THEME.bgAlt);
+        ctx.write(' '.repeat(panelW));
+      }
+      ctx.reset();
+    }
+  }
+
   // ── private helpers ──────────────────────────────────────────────────────
 
   private _applyTitleStyle(ctx: DrawContext, isActive: boolean): void {
@@ -585,4 +677,12 @@ export class Renderer {
 function rgbEqual(a: RGB | null, b: RGB | null): boolean {
   if (a === null || b === null) return a === b;
   return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+}
+
+function formatTime(ts: number): string {
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
 }

@@ -35,9 +35,14 @@ src/
                           readSync + LRU cache (CACHE_SIZE=2000); materializes to string[] on first
                           mutation or full lines access; call close() when removing from openBuffers
     Cursor.ts           — line/col movement with desiredCol for up/down navigation
-    Editor.ts           — event loop, key dispatch across edit/filebrowser/search/jstransform modes
+    Editor.ts           — event loop, key dispatch across edit/filebrowser/search/jstransform/undo modes
+    UndoHistory.ts      — UndoCheckpoint interface + UndoHistory class: checkpoint(), get(), revertTo(),
+                          list, count; stores full line snapshots with cursor position and timestamp
   ui/
     Layout.ts           — pane geometry for single/hsplit2/vsplit2/quad + file browser side panel
+                          + undo panel (44-col right-anchored overlay); toggleUndoPanel() / undoPanelBounds()
+    UndoPanel.ts        — undo panel UI state: open/close, moveUp/moveDown navigation (newest-at-top),
+                          adjustScroll, selected getter, previewLines for live checkpoint preview
     Pane.ts             — viewport/scroll into a Buffer; gutter width; cursor screen coords
     FileBrowser.ts      — directory listing with readdirSync, keyboard nav
     SearchPanel.ts      — search state (needle, results, selection); two modes: file and project
@@ -82,6 +87,10 @@ src/
 | Alt+J (in JS Transform) | Run transform & close panel |
 | Alt+C (in JS Transform) | Cancel / close panel |
 | Alt+1/2/3/4 | Layout: single / hsplit2 / vsplit2 / quad |
+| Ctrl+U | Open undo history panel |
+| ↑ / ↓ | (undo mode) Navigate checkpoints — ↑ toward newer, ↓ toward older |
+| Enter | (undo mode) Revert buffer to selected checkpoint |
+| Esc / Ctrl+U | (undo mode) Cancel, close panel |
 | Ctrl+←/→ | Word navigation |
 | Ctrl+Home/End | File start/end |
 | Arrow keys | Move cursor |
@@ -117,7 +126,7 @@ node ui-tests/runner.mjs --debug --suite <name>   # step-through debug mode
 
 UI tests spawn the editor inside a real PTY (via a C N-API addon wrapping `forkpty`), inject keystrokes, and assert on screen content and saved file contents. They live in `ui-tests/tests/NN_name.test.ts` and are auto-discovered by the runner.
 
-Available suites: `startup`, `text_input`, `multipane`, `file_search`, `project_search`, `search_cursor`, `scroll_rendering`, `scroll_rendering_c_code`, `readonly_file`, `file_browser`, `js_transform`, `tab_navigation`, `multi_pane`.
+Available suites: `startup`, `text_input`, `multipane`, `file_search`, `project_search`, `search_cursor`, `scroll_rendering`, `scroll_rendering_c_code`, `readonly_file`, `file_browser`, `js_transform`, `tab_navigation`, `multi_pane`, `undo_history`.
 
 ### Running all tests together
 
@@ -158,6 +167,93 @@ The UI test suite `tab_navigation` verifies this behaviour end-to-end: it reads 
 - **Buffer lazy loading** — files ≥ 5000 lines keep an open fd and serve `getLine()` via `readSync` + LRU cache; they materialize (all lines loaded into memory, fd closed) automatically on first mutation or when the `lines` getter is accessed. Always call `buf.close()` when removing a buffer from `openBuffers` to release the fd (important on Windows, which locks open files).
 - **HighlightCache redraw callback** — when opening a buffer, call `highlighter.getCache(buf).setRedrawCallback(() => this.render())`; when closing it, call `setRedrawCallback(null)`. The callback fires when the background tokenizer build reaches the checkpoint covering the current viewport, replacing the initial plain-text render with highlighted output.
 - **FileSearch and lazy buffers** — `searchInBuffer` calls `buf.materialize()` before iterating lines. Without this, a search over a large lazy buffer would issue one `readSync` per cache miss (~1 M calls for a 1 M-line file).
+- **Undo timer scope** — `_undoTimer` in `Editor.ts` is a single shared timer, not per-buffer. It is always reset to the buffer that was last edited. Opening the undo panel while the timer is still pending is prevented by the guard `buf.undoHistory.count === 0`; once the timer fires, count ≥ 2 (initial + idle checkpoint).
+
+---
+
+## Undo History
+
+Linear checkpoint-based undo. Each buffer accumulates coarse-grained snapshots automatically; the user browses them in a side panel with live preview.
+
+### Data model — `src/editor/UndoHistory.ts`
+
+`UndoCheckpoint` stores: `id` (auto-increment), `timestamp` (`Date.now()`), `lines` (full defensive copy of `buf.lines`), `cursorLine`, `cursorCol`.
+
+`UndoHistory` owns the checkpoint list and exposes:
+- `checkpoint(lines, cursorLine, cursorCol)` — appends a new entry.
+- `get(index)` — returns the checkpoint at a given index.
+- `revertTo(index)` — discards all checkpoints after `index`, making `index` the new head. Returns the head checkpoint, or `null` when out of range.
+- `list` (readonly) and `count` getters.
+
+Linearity is enforced by `revertTo`: reverting to an older checkpoint and then making new edits grows fresh history from that point. There is no redo.
+
+### UI state — `src/ui/UndoPanel.ts`
+
+`UndoPanel` tracks: `active`, `targetBuffer` (the buffer opened with `Ctrl+U`), `selectedIndex` (0 = oldest, `count−1` = newest), `scrollOffset` (in display-index space, where 0 = newest), and `previewLines`.
+
+`previewLines` is the key field: `moveUp`/`moveDown` copy the selected checkpoint's lines there. The renderer reads `previewLines` instead of `buf.getLine()` when drawing the source pane, so checkpoint content appears live without touching the real buffer.
+
+### Checkpoint lifecycle
+
+```
+file loaded (small, < 5000 lines) →  checkpoint #1 (original content, cursor 0:0)
+file loaded (large, ≥ 5000 lines) →  no initial checkpoint (lazy; first one after first idle)
+edit, edit, edit                   →  _undoTimer restarted after each keystroke (3000 ms)
+3 s of idle                        →  checkpoint #N created automatically
+Ctrl+S save                        →  checkpoint #N created immediately, timer cancelled
+Ctrl+U open panel                  →  guard: only opens when count ≥ 1
+↑ / ↓ navigation                   →  previewLines swapped in renderer (buf.lines untouched)
+Enter (revert)                     →  buf.lines ← checkpoint.lines
+                                       forward history discarded (checkpoints[index+1..N] dropped)
+                                       checkpoint[index] is now the head
+                                       new edits grow from here via idle timer
+```
+
+The initial checkpoint is taken by `fromFile()` after `_materializeSync()` (the `buf._lineOffsets.length < LAZY_THRESHOLD` branch). It is **not** taken in the constructor — the constructor is called internally by `fromFile()` with an empty placeholder, so a constructor snapshot would create a spurious empty-buffer entry.
+
+The idle timer captures `buf.lines` at callback time (3 s after the last edit) but records the cursor position at the time of the last edit. This gives a meaningful "where were you" hint per checkpoint.
+
+### Panel layout
+
+`Layout.undoPanelVisible` / `undoPanelWidth` (44 columns) control a right-anchored overlay. `_recompute()` subtracts `undoPanelWidth` from `cW` when the panel is open, narrowing all panes from the right. `undoPanelBounds()` returns `{ x: termW − 44, y: 0, w: 44, h: termH − 1 }`.
+
+The renderer draws a `│` border at column `x`, then the title bar and entry list in the remaining 43 columns. Each entry row:
+
+```
+ #12  14:32:05  (128 lines)
+```
+
+The list is displayed **newest at top**: display-index 0 = history index `count−1`. `scrollOffset` lives in display-index space. `adjustScroll(visibleHeight)` keeps the selected row inside the visible window using `displayIndex = (count−1) − selectedIndex`.
+
+### Renderer integration
+
+`Renderer.render()` accepts `undoPanel: UndoPanel` as a new parameter (after `jsTransformPanel`).
+
+**`isActive` calc** — the active pane flag is false when `undoPanel.active`, so the cursor is hidden while the panel is open.
+
+**`_renderPane` override** — when `undoPanel.active && undoPanel.targetBuffer === pane.buffer && undoPanel.previewLines !== null`, `effectiveLineCount` and `getEffectiveLine(n)` are redirected to `previewLines` instead of calling `buf.getLine()`. Syntax highlighting is left on the live buffer's cache (known limitation: colours may not match preview content exactly).
+
+**`_renderUndoPanel`** — draws the border column, title bar, and scrollable entry list. The selected row is rendered with `THEME.selectionBg` reverse highlight.
+
+### Key dispatch
+
+`Editor` adds a new `'undo'` mode. `handleKey()` routes to `handleUndoKey()` in this mode. `handleUndoKey()` handles: `↑` (`moveUp`), `↓` (`moveDown`), `Enter` (`_executeUndoRevert()`), `Esc` / `Ctrl+U` (close panel).
+
+`_executeUndoRevert()`:
+1. Calls `buf.undoHistory.revertTo(undoPanel.selectedIndex)` — discards forward history.
+2. Sets `buf.lines = [...cp.lines]` via the existing `set lines` setter.
+3. Sets `buf.modified = true`.
+4. Moves the pane cursor to `cp.cursorLine / cp.cursorCol`, clamped to the new line count.
+5. Calls `highlighter.invalidateFrom(0, buf)` — full highlight cache bust.
+6. Closes the panel and returns to `'edit'` mode.
+
+### What is not covered
+
+- Per-character granularity (checkpoints are coarse-grained by design).
+- Memory cap on checkpoint count.
+- Preview syntax highlighting (uses the live buffer's cache; colours may be wrong for the previewed revision).
+- Buffer switching while the panel is open (Alt+←/→, Ctrl+N are silently ignored in undo mode).
+- If the file browser is open on the right side at the same time as the undo panel, the two panels overlap (acceptable limitation).
 
 ---
 

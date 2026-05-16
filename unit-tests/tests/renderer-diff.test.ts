@@ -5,6 +5,7 @@ import { Layout } from '../../dist/ui/Layout.js';
 import { FileBrowser } from '../../dist/ui/FileBrowser.js';
 import { SearchPanel } from '../../dist/ui/SearchPanel.js';
 import { JsTransformPanel } from '../../dist/ui/JsTransformPanel.js';
+import { UndoPanel } from '../../dist/ui/UndoPanel.js';
 import { Highlighter } from '../../dist/highlight/Highlighter.js';
 import { Buffer } from '../../dist/editor/Buffer.js';
 import type { TestCase } from './types.js';
@@ -42,7 +43,7 @@ function makeCtx() {
 
 function doRender(ctx: ReturnType<typeof makeCtx>): string {
   return captureOutput(() => {
-    ctx.renderer.render(ctx.layout, ctx.fb, ctx.sp, new JsTransformPanel(), ctx.hl, 'edit', '');
+    ctx.renderer.render(ctx.layout, ctx.fb, ctx.sp, new JsTransformPanel(), new UndoPanel(), ctx.hl, 'edit', '');
   });
 }
 
@@ -205,7 +206,7 @@ export const tests: TestCase[] = [
       const ctx = makeCtx();
       ctx.sp.open('file');
       const out = captureOutput(() => {
-        ctx.renderer.render(ctx.layout, ctx.fb, ctx.sp, new JsTransformPanel(), ctx.hl, 'search', '');
+        ctx.renderer.render(ctx.layout, ctx.fb, ctx.sp, new JsTransformPanel(), new UndoPanel(), ctx.hl, 'search', '');
       });
       assert.ok(out.endsWith('\x1b[?25h'), 'expected showCursor (\\x1b[?25h) at end of output when search is active');
     },
